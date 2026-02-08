@@ -260,7 +260,7 @@ export function Timeline() {
 
           {/* Anecdotes Grid with Dock Effect */}
           {yearAnecdotes.length > 0 ? (
-            <div className="flex flex-wrap justify-center gap-4 py-8">
+            <div className="dock-strip flex flex-wrap justify-center gap-4 py-8">
               {yearAnecdotes.map((anecdote) => (
                 <DockAnecdoteCard 
                   key={anecdote.id} 
@@ -304,7 +304,6 @@ export function Timeline() {
 // Dock-style anecdote card with hover scaling
 function DockAnecdoteCard({ anecdote }: { anecdote: Anecdote }) {
   const { setExpandedAnecdote } = useTimeline();
-  const [isHovered, setIsHovered] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
   const UPLOADS_URL = API_BASE_URL.replace('/api', '');
@@ -322,14 +321,7 @@ function DockAnecdoteCard({ anecdote }: { anecdote: Anecdote }) {
   return (
     <div
       className="dock-item cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
       onClick={() => setExpandedAnecdote(anecdote)}
-      style={{
-        transform: isHovered ? 'scale(1.3) translateY(-20px)' : 'scale(1)',
-        zIndex: isHovered ? 20 : 1,
-        transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)'
-      }}
     >
       <div className="w-48 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 hover:border-[#D0FF59]/50 transition-colors">
         {imageMedia.length > 0 && (

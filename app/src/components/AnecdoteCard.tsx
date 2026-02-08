@@ -14,6 +14,8 @@ interface AnecdoteCardProps {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const UPLOADS_URL = API_BASE_URL.replace('/api', '');
+const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.m4v'];
+const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
 
 export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCardProps) {
   const { updateAnecdote, deleteAnecdote, setExpandedAnecdote } = useTimeline();
@@ -70,17 +72,24 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
             )}
             {primaryMedia.type === 'video' && (() => {
               const mediaUrl = getMediaUrl(primaryMedia.url);
-              const youtubeId = getYouTubeId(mediaUrl);
-              if (youtubeId) {
+              const embedUrl = getVideoEmbedUrl(mediaUrl);
+              if (embedUrl) {
                 return (
                   <div className="aspect-video">
                     <iframe
-                      src={`https://www.youtube.com/embed/${youtubeId}`}
+                      src={embedUrl}
                       title={primaryMedia.caption || 'Video preview'}
                       className="w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     />
+                  </div>
+                );
+              }
+              if (!isDirectMediaFile(mediaUrl, VIDEO_EXTENSIONS)) {
+                return (
+                  <div className="h-32 flex items-center justify-center text-gray-400 text-xs px-3 text-center">
+                    Open full card to view this video source
                   </div>
                 );
               }
@@ -391,17 +400,45 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
   );
 }
 
-// Helper to extract YouTube video ID from various URL formats
-const getYouTubeId = (url: string): string | null => {
-  const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/,
-  ];
-  for (const pattern of patterns) {
-    const match = url.match(pattern);
-    if (match) return match[1];
+const normalizeHost = (host: string) => host.replace(/^www\./, '').toLowerCase();
+
+const getVideoEmbedUrl = (url: string): string | null => {
+  try {
+    const parsed = new URL(url);
+    const host = normalizeHost(parsed.hostname);
+
+    if (host === 'youtu.be' || host.endsWith('youtube.com') || host === 'youtube-nocookie.com') {
+      let id = '';
+      if (host === 'youtu.be') {
+        id = parsed.pathname.split('/').filter(Boolean)[0] || '';
+      } else if (parsed.pathname.startsWith('/watch')) {
+        id = parsed.searchParams.get('v') || '';
+      } else if (parsed.pathname.startsWith('/shorts/') || parsed.pathname.startsWith('/embed/') || parsed.pathname.startsWith('/live/')) {
+        id = parsed.pathname.split('/').filter(Boolean)[1] || '';
+      }
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+
+    if (host === 'vimeo.com' || host.endsWith('.vimeo.com')) {
+      const match = parsed.pathname.match(/\/(\d+)/);
+      if (match?.[1]) return `https://player.vimeo.com/video/${match[1]}`;
+    }
+  } catch {
+    return null;
   }
+
   return null;
+};
+
+const isDirectMediaFile = (url: string, extensions: string[]): boolean => {
+  if (url.startsWith('/uploads/')) return true;
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    return extensions.some(ext => pathname.endsWith(ext));
+  } catch {
+    const lower = url.toLowerCase();
+    return extensions.some(ext => lower.includes(ext));
+  }
 };
 
 function MediaItem({ media }: { media: Media }) {
@@ -416,16 +453,16 @@ function MediaItem({ media }: { media: Media }) {
     return url;
   };
 
-  // Check if it's a YouTube URL
   const resolvedUrl = getMediaUrl(media.url);
-  const youtubeId = getYouTubeId(resolvedUrl);
-  if (youtubeId) {
+  const embedUrl = media.type === 'video' ? getVideoEmbedUrl(resolvedUrl) : null;
+
+  if (embedUrl) {
     return (
       <div className="relative">
         <div className="aspect-video rounded-lg overflow-hidden bg-gray-800">
           <iframe
-            src={`https://www.youtube.com/embed/${youtubeId}`}
-            title={media.caption || 'YouTube video'}
+            src={embedUrl}
+            title={media.caption || 'Embedded video'}
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -444,12 +481,42 @@ function MediaItem({ media }: { media: Media }) {
         {media.type === 'video' && <Video className="w-8 h-8 text-gray-600 mb-2" />}
         {media.type === 'audio' && <Music className="w-8 h-8 text-gray-600 mb-2" />}
         <p className="text-gray-500 text-xs text-center truncate w-full">{media.url}</p>
+        <a
+          href={resolvedUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center gap-1 text-xs text-[#D0FF59] hover:underline"
+        >
+          <ExternalLink className="w-3 h-3" />
+          Open source
+        </a>
         {media.caption && <p className="text-gray-400 text-xs mt-1">{media.caption}</p>}
       </div>
     );
   }
 
   if (media.type === 'video') {
+    if (!isDirectMediaFile(resolvedUrl, VIDEO_EXTENSIONS)) {
+      return (
+        <div className="aspect-video bg-gray-800 rounded-lg flex flex-col items-center justify-center p-4">
+          <Video className="w-8 h-8 text-gray-600 mb-2" />
+          <p className="text-gray-400 text-xs text-center">This URL is not a direct video file. Open source or use YouTube/Vimeo link.</p>
+          <a
+            href={resolvedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-xs text-[#D0FF59] hover:underline"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Open source
+          </a>
+          {media.caption && (
+            <p className="text-gray-400 text-xs mt-2">{media.caption}</p>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="relative">
         <video 
@@ -467,6 +534,29 @@ function MediaItem({ media }: { media: Media }) {
   }
 
   if (media.type === 'audio') {
+    if (!isDirectMediaFile(resolvedUrl, AUDIO_EXTENSIONS)) {
+      return (
+        <div className="bg-gray-800 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-gray-400 text-sm">
+            <Music className="w-4 h-4" />
+            This URL is not a direct audio file.
+          </div>
+          <a
+            href={resolvedUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-xs text-[#D0FF59] hover:underline"
+          >
+            <ExternalLink className="w-3 h-3" />
+            Open source
+          </a>
+          {media.caption && (
+            <p className="text-gray-400 text-xs mt-2">{media.caption}</p>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="bg-gray-800 rounded-lg p-4">
         <audio 

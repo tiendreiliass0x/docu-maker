@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { X, Plus, Video, Music, Upload, Loader2, MapPin, ArrowUp, ArrowDown, Link2, Image as ImageIcon } from 'lucide-react';
+import { X, Plus, Video, Music, Upload, Loader2, MapPin, ArrowUp, ArrowDown, Link2, ExternalLink, Image as ImageIcon } from 'lucide-react';
 import { useTimeline } from '@/context/TimelineContext';
 import { api } from '@/services/api';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,9 @@ interface AnecdoteFormProps {
   year: number;
   onClose: () => void;
 }
+
+const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.m4v'];
+const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
 
 export function AnecdoteForm({ year, onClose }: AnecdoteFormProps) {
   const { addAnecdote } = useTimeline();
@@ -128,9 +131,43 @@ export function AnecdoteForm({ year, onClose }: AnecdoteFormProps) {
     setMediaUrls(mediaUrls.map((m, i) => i === index ? { ...m, caption } : m));
   };
 
-  const getYoutubeEmbed = (url: string): string | null => {
-    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]+)/i);
-    return match ? `https://www.youtube.com/embed/${match[1]}` : null;
+  const getVideoEmbedUrl = (url: string): string | null => {
+    try {
+      const parsed = new URL(url);
+      const host = parsed.hostname.replace(/^www\./, '').toLowerCase();
+
+      if (host === 'youtu.be' || host.endsWith('youtube.com') || host === 'youtube-nocookie.com') {
+        let id = '';
+        if (host === 'youtu.be') {
+          id = parsed.pathname.split('/').filter(Boolean)[0] || '';
+        } else if (parsed.pathname.startsWith('/watch')) {
+          id = parsed.searchParams.get('v') || '';
+        } else if (parsed.pathname.startsWith('/shorts/') || parsed.pathname.startsWith('/embed/') || parsed.pathname.startsWith('/live/')) {
+          id = parsed.pathname.split('/').filter(Boolean)[1] || '';
+        }
+        if (id) return `https://www.youtube.com/embed/${id}`;
+      }
+
+      if (host === 'vimeo.com' || host.endsWith('.vimeo.com')) {
+        const match = parsed.pathname.match(/\/(\d+)/);
+        if (match?.[1]) return `https://player.vimeo.com/video/${match[1]}`;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  };
+
+  const isDirectMediaFile = (url: string, extensions: string[]): boolean => {
+    if (url.startsWith('/uploads/')) return true;
+    try {
+      const pathname = new URL(url).pathname.toLowerCase();
+      return extensions.some(ext => pathname.endsWith(ext));
+    } catch {
+      const lower = url.toLowerCase();
+      return extensions.some(ext => lower.includes(ext));
+    }
   };
 
   const moveMedia = (index: number, direction: 'up' | 'down') => {
@@ -368,16 +405,29 @@ export function AnecdoteForm({ year, onClose }: AnecdoteFormProps) {
                     )}
                     {media.type === 'video' && (() => {
                       const previewUrl = media.url.startsWith('/uploads/') ? api.getUploadsUrl(media.url) : media.url;
-                      const embed = getYoutubeEmbed(previewUrl);
-                      if (embed) {
+                      const embedUrl = getVideoEmbedUrl(previewUrl);
+                      if (embedUrl) {
                         return (
                           <iframe
-                            src={embed}
+                            src={embedUrl}
                             title="Video preview"
                             className="w-full h-full"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             allowFullScreen
                           />
+                        );
+                      }
+                      if (!isDirectMediaFile(previewUrl, VIDEO_EXTENSIONS)) {
+                        return (
+                          <a
+                            href={previewUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-[#D0FF59] inline-flex items-center gap-1 px-2 text-center"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            Open video
+                          </a>
                         );
                       }
                       return (
@@ -390,11 +440,29 @@ export function AnecdoteForm({ year, onClose }: AnecdoteFormProps) {
                       );
                     })()}
                     {media.type === 'audio' && (
-                      <audio
-                        src={media.url.startsWith('/uploads/') ? api.getUploadsUrl(media.url) : media.url}
-                        controls
-                        className="w-full"
-                      />
+                      (() => {
+                        const previewUrl = media.url.startsWith('/uploads/') ? api.getUploadsUrl(media.url) : media.url;
+                        if (!isDirectMediaFile(previewUrl, AUDIO_EXTENSIONS)) {
+                          return (
+                            <a
+                              href={previewUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-[#D0FF59] inline-flex items-center gap-1 px-2 text-center"
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                              Open audio
+                            </a>
+                          );
+                        }
+                        return (
+                          <audio
+                            src={previewUrl}
+                            controls
+                            className="w-full"
+                          />
+                        );
+                      })()
                     )}
                   </div>
 
