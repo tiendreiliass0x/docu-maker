@@ -332,6 +332,15 @@ function DockAnecdoteCard({ anecdote }: { anecdote: Anecdote }) {
       }}
     >
       <div className="w-48 bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 hover:border-[#D0FF59]/50 transition-colors">
+        {imageMedia.length > 0 && (
+          <div className="mb-3 rounded-lg overflow-hidden border border-gray-700">
+            <img
+              src={getImageUrl(imageMedia[0].url)}
+              alt={imageMedia[0].caption || anecdote.title}
+              className="w-full h-24 object-cover"
+            />
+          </div>
+        )}
         {/* Date Badge */}
         <div className="flex items-center gap-2 text-[#D0FF59] text-xs mb-2">
           <Calendar className="w-3 h-3" />

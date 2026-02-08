@@ -2,6 +2,7 @@ import { AuthProvider } from '@/context/AuthContext';
 import { TimelineProvider } from '@/context/TimelineContext';
 import { Hero } from '@/sections/Hero';
 import { Timeline } from '@/sections/Timeline';
+import { Storylines } from '@/sections/Storylines';
 import { StoryGraph } from '@/sections/StoryGraph';
 import { Footer } from '@/sections/Footer';
 import './App.css';
@@ -18,6 +19,7 @@ function App() {
           <main>
             <Hero />
             <Timeline />
+            <Storylines />
             <StoryGraph />
             <Footer />
           </main>

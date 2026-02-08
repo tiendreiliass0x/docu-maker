@@ -1,0 +1,1024 @@
+[
+  {
+    "id": "chronicle",
+    "title": "Origins to Spotlight",
+    "description": "A straight-line rise from the first rooms to the biggest stages.",
+    "style": "jesse",
+    "tone": "Measured, human-centered reporting with reflective edges (Jesse Washington cut)",
+    "openingLine": "A sound crossed oceans and settled into Seattle by 2012.",
+    "closingLine": "The movement keeps writing its next chapter.",
+    "beats": [
+      {
+        "id": "chronicle-1",
+        "anecdote": {
+          "id": "96cb2893-bd83-49ee-a52f-1ef41044d7bc",
+          "date": "2012-01-01",
+          "year": 2012,
+          "title": "Test story",
+          "story": "This is a test",
+          "storyteller": "DJ Topdog",
+          "location": "Somewhere",
+          "notes": "",
+          "media": [],
+          "tags": [],
+          "createdAt": 1770523994694,
+          "updatedAt": 1770523994694,
+          "_timestamp": 1325376000000,
+          "_text": "test story this is a test  somewhere dj topdog ",
+          "_tags": []
+        },
+        "summary": "This is a test",
+        "voiceover": "In 2012 at Somewhere, a quiet shift started to feel inevitable.",
+        "connection": null,
+        "intensity": 1
+      },
+      {
+        "id": "chronicle-2",
+        "anecdote": {
+          "id": "sample-1",
+          "date": "2015-06-15",
+          "year": 2015,
+          "title": "First Afrobeats Night at The Crocodile",
+          "story": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+          "storyteller": "Amara Johnson",
+          "location": "The Crocodile, Belltown",
+          "notes": "This event marked the beginning of the Seattle Afrobeats scene.",
+          "media": [],
+          "tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1434326400000,
+          "_text": "first afrobeats night at the crocodile the energy was electric. dj khaled was spinning wizkid and davido tracks, and the dance floor was packed from wall to wall. this event marked the beginning of the seattle afrobeats scene. the crocodile, belltown amara johnson milestone dj dance",
+          "_tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ]
+        },
+        "summary": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+        "voiceover": "Amara Johnson remembers first afrobeats night at the crocodile. The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall...",
+        "connection": {
+          "type": "chronology",
+          "label": "2012 to 2015"
+        },
+        "intensity": 3
+      },
+      {
+        "id": "chronicle-3",
+        "anecdote": {
+          "id": "sample-2",
+          "date": "2017-08-22",
+          "year": 2017,
+          "title": "Wizkid's First Seattle Performance",
+          "story": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+          "storyteller": "Tunde Olatunji",
+          "location": "Showbox SoDo",
+          "notes": "Tickets sold out in 2 hours.",
+          "media": [],
+          "tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1503360000000,
+          "_text": "wizkid's first seattle performance when wizkid stepped on stage at showbox sodo, the crowd went wild. he performed 'ojuelegba' and 'come closer'. tickets sold out in 2 hours. showbox sodo tunde olatunji concert wizkid nigeria",
+          "_tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ]
+        },
+        "summary": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+        "voiceover": "Tunde Olatunji remembers wizkid's first seattle performance. When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+        "connection": {
+          "type": "chronology",
+          "label": "2015 to 2017"
+        },
+        "intensity": 4
+      },
+      {
+        "id": "chronicle-4",
+        "anecdote": {
+          "id": "5fefa25f-3b18-4517-b6cc-1e002d62beb3",
+          "date": "2019-01-17",
+          "year": 2019,
+          "title": "Crazy night",
+          "story": "It was a movie",
+          "storyteller": "Iliass",
+          "location": "RedLounge",
+          "notes": "",
+          "media": [
+            {
+              "id": "",
+              "type": "image",
+              "url": "/uploads/1770512882233-lond925yy1.png",
+              "caption": ""
+            }
+          ],
+          "tags": [
+            "dancehall",
+            "wizkid"
+          ],
+          "createdAt": 1770513003297,
+          "updatedAt": 1770513003297,
+          "_timestamp": 1547683200000,
+          "_text": "crazy night it was a movie  redlounge iliass dancehall wizkid",
+          "_tags": [
+            "dancehall",
+            "wizkid"
+          ]
+        },
+        "summary": "It was a movie",
+        "voiceover": "Iliass remembers crazy night. It was a movie",
+        "connection": {
+          "type": "tag",
+          "label": "#wizkid"
+        },
+        "intensity": 1
+      },
+      {
+        "id": "chronicle-5",
+        "anecdote": {
+          "id": "sample-3",
+          "date": "2019-03-10",
+          "year": 2019,
+          "title": "Afrobeats Dance Workshop at UW",
+          "story": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+          "storyteller": "Chioma Nwosu",
+          "location": "University of Washington",
+          "notes": "Co-hosted by the African Student Association.",
+          "media": [],
+          "tags": [
+            "dance",
+            "workshop",
+            "education"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1552176000000,
+          "_text": "afrobeats dance workshop at uw we organized a free dance workshop teaching azonto and shaku shaku moves. over 200 people showed up! co-hosted by the african student association. university of washington chioma nwosu dance workshop education",
+          "_tags": [
+            "dance",
+            "workshop",
+            "education"
+          ]
+        },
+        "summary": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+        "voiceover": "By 2019, the story is no longer about a moment but a movement.",
+        "connection": {
+          "type": "chronology",
+          "label": "2019 to 2019"
+        },
+        "intensity": 1
+      }
+    ],
+    "tags": [
+      "milestone",
+      "dj",
+      "dance",
+      "concert",
+      "wizkid",
+      "nigeria",
+      "dancehall",
+      "workshop",
+      "education"
+    ],
+    "timeframe": {
+      "start": "2012-01-01",
+      "end": "2019-03-10",
+      "years": [
+        2012,
+        2015,
+        2017,
+        2019
+      ]
+    }
+  },
+  {
+    "id": "nightlife",
+    "title": "Nightlife Pulse",
+    "description": "The late-night circuit that kept the rhythm alive.",
+    "style": "50cent",
+    "tone": "Gritty, first-person energy with swagger",
+    "openingLine": "This is how the city started moving in 2017 at Showbox SoDo.",
+    "closingLine": "Now the rhythm is part of the city's DNA.",
+    "beats": [
+      {
+        "id": "nightlife-1",
+        "anecdote": {
+          "id": "sample-2",
+          "date": "2017-08-22",
+          "year": 2017,
+          "title": "Wizkid's First Seattle Performance",
+          "story": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+          "storyteller": "Tunde Olatunji",
+          "location": "Showbox SoDo",
+          "notes": "Tickets sold out in 2 hours.",
+          "media": [],
+          "tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1503360000000,
+          "_text": "wizkid's first seattle performance when wizkid stepped on stage at showbox sodo, the crowd went wild. he performed 'ojuelegba' and 'come closer'. tickets sold out in 2 hours. showbox sodo tunde olatunji concert wizkid nigeria",
+          "_tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ]
+        },
+        "summary": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+        "voiceover": "Back in 2017 at Showbox SoDo, it started with wizkid's first seattle performance.",
+        "connection": null,
+        "intensity": 4
+      },
+      {
+        "id": "nightlife-2",
+        "anecdote": {
+          "id": "sample-1",
+          "date": "2015-06-15",
+          "year": 2015,
+          "title": "First Afrobeats Night at The Crocodile",
+          "story": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+          "storyteller": "Amara Johnson",
+          "location": "The Crocodile, Belltown",
+          "notes": "This event marked the beginning of the Seattle Afrobeats scene.",
+          "media": [],
+          "tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1434326400000,
+          "_text": "first afrobeats night at the crocodile the energy was electric. dj khaled was spinning wizkid and davido tracks, and the dance floor was packed from wall to wall. this event marked the beginning of the seattle afrobeats scene. the crocodile, belltown amara johnson milestone dj dance",
+          "_tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ]
+        },
+        "summary": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+        "voiceover": "First Afrobeats Night at The Crocodile at The Crocodile, Belltown. The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall...",
+        "connection": {
+          "type": "chronology",
+          "label": "2017 to 2015"
+        },
+        "intensity": 3
+      },
+      {
+        "id": "nightlife-3",
+        "anecdote": {
+          "id": "sample-3",
+          "date": "2019-03-10",
+          "year": 2019,
+          "title": "Afrobeats Dance Workshop at UW",
+          "story": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+          "storyteller": "Chioma Nwosu",
+          "location": "University of Washington",
+          "notes": "Co-hosted by the African Student Association.",
+          "media": [],
+          "tags": [
+            "dance",
+            "workshop",
+            "education"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1552176000000,
+          "_text": "afrobeats dance workshop at uw we organized a free dance workshop teaching azonto and shaku shaku moves. over 200 people showed up! co-hosted by the african student association. university of washington chioma nwosu dance workshop education",
+          "_tags": [
+            "dance",
+            "workshop",
+            "education"
+          ]
+        },
+        "summary": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+        "voiceover": "Afrobeats Dance Workshop at UW at University of Washington. We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+        "connection": {
+          "type": "tag",
+          "label": "#dance"
+        },
+        "intensity": 1
+      },
+      {
+        "id": "nightlife-4",
+        "anecdote": {
+          "id": "5fefa25f-3b18-4517-b6cc-1e002d62beb3",
+          "date": "2019-01-17",
+          "year": 2019,
+          "title": "Crazy night",
+          "story": "It was a movie",
+          "storyteller": "Iliass",
+          "location": "RedLounge",
+          "notes": "",
+          "media": [
+            {
+              "id": "",
+              "type": "image",
+              "url": "/uploads/1770512882233-lond925yy1.png",
+              "caption": ""
+            }
+          ],
+          "tags": [
+            "dancehall",
+            "wizkid"
+          ],
+          "createdAt": 1770513003297,
+          "updatedAt": 1770513003297,
+          "_timestamp": 1547683200000,
+          "_text": "crazy night it was a movie  redlounge iliass dancehall wizkid",
+          "_tags": [
+            "dancehall",
+            "wizkid"
+          ]
+        },
+        "summary": "It was a movie",
+        "voiceover": "Crazy night at RedLounge. It was a movie",
+        "connection": {
+          "type": "chronology",
+          "label": "2019 to 2019"
+        },
+        "intensity": 1
+      },
+      {
+        "id": "nightlife-5",
+        "anecdote": {
+          "id": "7563e486-36b6-4890-90e0-476296588757",
+          "date": "2020-01-01",
+          "year": 2020,
+          "title": "Pandemic hits",
+          "story": "Everything slowdown",
+          "storyteller": "DJ Topdog",
+          "location": "Space needle",
+          "notes": "",
+          "media": [],
+          "tags": [],
+          "createdAt": 1770531359505,
+          "updatedAt": 1770531359505,
+          "_timestamp": 1577836800000,
+          "_text": "pandemic hits everything slowdown  space needle dj topdog ",
+          "_tags": []
+        },
+        "summary": "Everything slowdown",
+        "voiceover": "By 2020, Pandemic hits was proof the city had changed.",
+        "connection": {
+          "type": "chronology",
+          "label": "2019 to 2020"
+        },
+        "intensity": 1
+      }
+    ],
+    "tags": [
+      "concert",
+      "wizkid",
+      "nigeria",
+      "milestone",
+      "dj",
+      "dance",
+      "workshop",
+      "education",
+      "dancehall"
+    ],
+    "timeframe": {
+      "start": "2017-08-22",
+      "end": "2020-01-01",
+      "years": [
+        2015,
+        2017,
+        2019,
+        2020
+      ]
+    }
+  },
+  {
+    "id": "breakthrough",
+    "title": "Breakthrough Moments",
+    "description": "When the scene broke past its borders and stayed there.",
+    "style": "hybrid",
+    "tone": "Cinematic with journalistic edge",
+    "openingLine": "In 2017 at Showbox SoDo, the timeline sparks.",
+    "closingLine": "The beat keeps moving after 2019.",
+    "beats": [
+      {
+        "id": "breakthrough-1",
+        "anecdote": {
+          "id": "sample-2",
+          "date": "2017-08-22",
+          "year": 2017,
+          "title": "Wizkid's First Seattle Performance",
+          "story": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+          "storyteller": "Tunde Olatunji",
+          "location": "Showbox SoDo",
+          "notes": "Tickets sold out in 2 hours.",
+          "media": [],
+          "tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1503360000000,
+          "_text": "wizkid's first seattle performance when wizkid stepped on stage at showbox sodo, the crowd went wild. he performed 'ojuelegba' and 'come closer'. tickets sold out in 2 hours. showbox sodo tunde olatunji concert wizkid nigeria",
+          "_tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ]
+        },
+        "summary": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+        "voiceover": "Seattle didn't plan for this. Wizkid's First Seattle Performance lit the fuse in 2017.",
+        "connection": null,
+        "intensity": 4
+      },
+      {
+        "id": "breakthrough-2",
+        "anecdote": {
+          "id": "sample-4",
+          "date": "2022-07-04",
+          "year": 2022,
+          "title": "Burna Boy at Climate Pledge Arena",
+          "story": "Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+          "storyteller": "Marcus Williams",
+          "location": "Climate Pledge Arena",
+          "notes": "First Afrobeats artist to headline Climate Pledge Arena.",
+          "media": [],
+          "tags": [
+            "concert",
+            "burna-boy",
+            "arena"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1656892800000,
+          "_text": "burna boy at climate pledge arena burna boy's 'love, damini' tour stop in seattle was absolutely massive. the african giant brought his full band. first afrobeats artist to headline climate pledge arena. climate pledge arena marcus williams concert burna-boy arena",
+          "_tags": [
+            "concert",
+            "burna-boy",
+            "arena"
+          ]
+        },
+        "summary": "Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+        "voiceover": "Burna Boy at Climate Pledge Arena. Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+        "connection": {
+          "type": "tag",
+          "label": "#concert"
+        },
+        "intensity": 4
+      },
+      {
+        "id": "breakthrough-3",
+        "anecdote": {
+          "id": "sample-1",
+          "date": "2015-06-15",
+          "year": 2015,
+          "title": "First Afrobeats Night at The Crocodile",
+          "story": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+          "storyteller": "Amara Johnson",
+          "location": "The Crocodile, Belltown",
+          "notes": "This event marked the beginning of the Seattle Afrobeats scene.",
+          "media": [],
+          "tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1434326400000,
+          "_text": "first afrobeats night at the crocodile the energy was electric. dj khaled was spinning wizkid and davido tracks, and the dance floor was packed from wall to wall. this event marked the beginning of the seattle afrobeats scene. the crocodile, belltown amara johnson milestone dj dance",
+          "_tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ]
+        },
+        "summary": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+        "voiceover": "First Afrobeats Night at The Crocodile. The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall...",
+        "connection": {
+          "type": "chronology",
+          "label": "2022 to 2015"
+        },
+        "intensity": 3
+      },
+      {
+        "id": "breakthrough-4",
+        "anecdote": {
+          "id": "sample-5",
+          "date": "2023-11-18",
+          "year": 2023,
+          "title": "Seattle Afrobeats Festival Launch",
+          "story": "The inaugural Seattle Afrobeats Festival brought together local DJs, dancers, food vendors, and artists.",
+          "storyteller": "Amina Diallo",
+          "location": "Seattle Center",
+          "notes": "Over 5,000 attendees throughout the day.",
+          "media": [],
+          "tags": [
+            "festival",
+            "food",
+            "community"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1700265600000,
+          "_text": "seattle afrobeats festival launch the inaugural seattle afrobeats festival brought together local djs, dancers, food vendors, and artists. over 5,000 attendees throughout the day. seattle center amina diallo festival food community",
+          "_tags": [
+            "festival",
+            "food",
+            "community"
+          ]
+        },
+        "summary": "The inaugural Seattle Afrobeats Festival brought together local DJs, dancers, food vendors, and artists.",
+        "voiceover": "Seattle Afrobeats Festival Launch. The inaugural Seattle Afrobeats Festival brought together local DJs, dancers, food vendors, and artists.",
+        "connection": {
+          "type": "chronology",
+          "label": "2015 to 2023"
+        },
+        "intensity": 3
+      },
+      {
+        "id": "breakthrough-5",
+        "anecdote": {
+          "id": "5fefa25f-3b18-4517-b6cc-1e002d62beb3",
+          "date": "2019-01-17",
+          "year": 2019,
+          "title": "Crazy night",
+          "story": "It was a movie",
+          "storyteller": "Iliass",
+          "location": "RedLounge",
+          "notes": "",
+          "media": [
+            {
+              "id": "",
+              "type": "image",
+              "url": "/uploads/1770512882233-lond925yy1.png",
+              "caption": ""
+            }
+          ],
+          "tags": [
+            "dancehall",
+            "wizkid"
+          ],
+          "createdAt": 1770513003297,
+          "updatedAt": 1770513003297,
+          "_timestamp": 1547683200000,
+          "_text": "crazy night it was a movie  redlounge iliass dancehall wizkid",
+          "_tags": [
+            "dancehall",
+            "wizkid"
+          ]
+        },
+        "summary": "It was a movie",
+        "voiceover": "The story keeps evolving after 2019.",
+        "connection": {
+          "type": "chronology",
+          "label": "2023 to 2019"
+        },
+        "intensity": 1
+      }
+    ],
+    "tags": [
+      "concert",
+      "wizkid",
+      "nigeria",
+      "burna-boy",
+      "arena",
+      "milestone",
+      "dj",
+      "dance",
+      "festival",
+      "food",
+      "community",
+      "dancehall"
+    ],
+    "timeframe": {
+      "start": "2017-08-22",
+      "end": "2019-01-17",
+      "years": [
+        2015,
+        2017,
+        2019,
+        2022,
+        2023
+      ]
+    }
+  },
+  {
+    "id": "community",
+    "title": "Community Roots",
+    "description": "The people, spaces, and diaspora that nurtured the sound.",
+    "style": "jesse",
+    "tone": "Measured, human-centered reporting with reflective edges (Jesse Washington cut)",
+    "openingLine": "A sound crossed oceans and settled into Seattle by 2017.",
+    "closingLine": "The movement keeps writing its next chapter.",
+    "beats": [
+      {
+        "id": "community-1",
+        "anecdote": {
+          "id": "sample-2",
+          "date": "2017-08-22",
+          "year": 2017,
+          "title": "Wizkid's First Seattle Performance",
+          "story": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+          "storyteller": "Tunde Olatunji",
+          "location": "Showbox SoDo",
+          "notes": "Tickets sold out in 2 hours.",
+          "media": [],
+          "tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1503360000000,
+          "_text": "wizkid's first seattle performance when wizkid stepped on stage at showbox sodo, the crowd went wild. he performed 'ojuelegba' and 'come closer'. tickets sold out in 2 hours. showbox sodo tunde olatunji concert wizkid nigeria",
+          "_tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ]
+        },
+        "summary": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+        "voiceover": "In 2017 at Showbox SoDo, a quiet shift started to feel inevitable.",
+        "connection": null,
+        "intensity": 4
+      },
+      {
+        "id": "community-2",
+        "anecdote": {
+          "id": "sample-4",
+          "date": "2022-07-04",
+          "year": 2022,
+          "title": "Burna Boy at Climate Pledge Arena",
+          "story": "Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+          "storyteller": "Marcus Williams",
+          "location": "Climate Pledge Arena",
+          "notes": "First Afrobeats artist to headline Climate Pledge Arena.",
+          "media": [],
+          "tags": [
+            "concert",
+            "burna-boy",
+            "arena"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1656892800000,
+          "_text": "burna boy at climate pledge arena burna boy's 'love, damini' tour stop in seattle was absolutely massive. the african giant brought his full band. first afrobeats artist to headline climate pledge arena. climate pledge arena marcus williams concert burna-boy arena",
+          "_tags": [
+            "concert",
+            "burna-boy",
+            "arena"
+          ]
+        },
+        "summary": "Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+        "voiceover": "Marcus Williams remembers burna boy at climate pledge arena. Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+        "connection": {
+          "type": "tag",
+          "label": "#concert"
+        },
+        "intensity": 4
+      },
+      {
+        "id": "community-3",
+        "anecdote": {
+          "id": "sample-1",
+          "date": "2015-06-15",
+          "year": 2015,
+          "title": "First Afrobeats Night at The Crocodile",
+          "story": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+          "storyteller": "Amara Johnson",
+          "location": "The Crocodile, Belltown",
+          "notes": "This event marked the beginning of the Seattle Afrobeats scene.",
+          "media": [],
+          "tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1434326400000,
+          "_text": "first afrobeats night at the crocodile the energy was electric. dj khaled was spinning wizkid and davido tracks, and the dance floor was packed from wall to wall. this event marked the beginning of the seattle afrobeats scene. the crocodile, belltown amara johnson milestone dj dance",
+          "_tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ]
+        },
+        "summary": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+        "voiceover": "Amara Johnson remembers first afrobeats night at the crocodile. The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall...",
+        "connection": {
+          "type": "chronology",
+          "label": "2022 to 2015"
+        },
+        "intensity": 3
+      },
+      {
+        "id": "community-4",
+        "anecdote": {
+          "id": "sample-3",
+          "date": "2019-03-10",
+          "year": 2019,
+          "title": "Afrobeats Dance Workshop at UW",
+          "story": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+          "storyteller": "Chioma Nwosu",
+          "location": "University of Washington",
+          "notes": "Co-hosted by the African Student Association.",
+          "media": [],
+          "tags": [
+            "dance",
+            "workshop",
+            "education"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1552176000000,
+          "_text": "afrobeats dance workshop at uw we organized a free dance workshop teaching azonto and shaku shaku moves. over 200 people showed up! co-hosted by the african student association. university of washington chioma nwosu dance workshop education",
+          "_tags": [
+            "dance",
+            "workshop",
+            "education"
+          ]
+        },
+        "summary": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+        "voiceover": "Chioma Nwosu remembers afrobeats dance workshop at uw. We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+        "connection": {
+          "type": "tag",
+          "label": "#dance"
+        },
+        "intensity": 1
+      },
+      {
+        "id": "community-5",
+        "anecdote": {
+          "id": "7563e486-36b6-4890-90e0-476296588757",
+          "date": "2020-01-01",
+          "year": 2020,
+          "title": "Pandemic hits",
+          "story": "Everything slowdown",
+          "storyteller": "DJ Topdog",
+          "location": "Space needle",
+          "notes": "",
+          "media": [],
+          "tags": [],
+          "createdAt": 1770531359505,
+          "updatedAt": 1770531359505,
+          "_timestamp": 1577836800000,
+          "_text": "pandemic hits everything slowdown  space needle dj topdog ",
+          "_tags": []
+        },
+        "summary": "Everything slowdown",
+        "voiceover": "By 2020, the story is no longer about a moment but a movement.",
+        "connection": {
+          "type": "chronology",
+          "label": "2019 to 2020"
+        },
+        "intensity": 1
+      }
+    ],
+    "tags": [
+      "concert",
+      "wizkid",
+      "nigeria",
+      "burna-boy",
+      "arena",
+      "milestone",
+      "dj",
+      "dance",
+      "workshop",
+      "education"
+    ],
+    "timeframe": {
+      "start": "2017-08-22",
+      "end": "2020-01-01",
+      "years": [
+        2015,
+        2017,
+        2019,
+        2020,
+        2022
+      ]
+    }
+  },
+  {
+    "id": "cinematic",
+    "title": "Heat & Hope",
+    "description": "A cinematic rise shaped by grit, joy, and the people who held it together.",
+    "style": "coogler",
+    "tone": "Cinematic, character-driven with emotional build and hope",
+    "openingLine": "In 2017 at Showbox SoDo, a new rhythm found its people.",
+    "closingLine": "The story lands, but the music keeps moving.",
+    "beats": [
+      {
+        "id": "cinematic-1",
+        "anecdote": {
+          "id": "sample-2",
+          "date": "2017-08-22",
+          "year": 2017,
+          "title": "Wizkid's First Seattle Performance",
+          "story": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+          "storyteller": "Tunde Olatunji",
+          "location": "Showbox SoDo",
+          "notes": "Tickets sold out in 2 hours.",
+          "media": [],
+          "tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1503360000000,
+          "_text": "wizkid's first seattle performance when wizkid stepped on stage at showbox sodo, the crowd went wild. he performed 'ojuelegba' and 'come closer'. tickets sold out in 2 hours. showbox sodo tunde olatunji concert wizkid nigeria",
+          "_tags": [
+            "concert",
+            "wizkid",
+            "nigeria"
+          ]
+        },
+        "summary": "When Wizkid stepped on stage at Showbox SoDo, the crowd went wild. He performed 'Ojuelegba' and 'Come Closer'.",
+        "voiceover": "In 2017 at Showbox SoDo, a spark caught—small, personal, and loud.",
+        "connection": null,
+        "intensity": 4
+      },
+      {
+        "id": "cinematic-2",
+        "anecdote": {
+          "id": "sample-4",
+          "date": "2022-07-04",
+          "year": 2022,
+          "title": "Burna Boy at Climate Pledge Arena",
+          "story": "Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+          "storyteller": "Marcus Williams",
+          "location": "Climate Pledge Arena",
+          "notes": "First Afrobeats artist to headline Climate Pledge Arena.",
+          "media": [],
+          "tags": [
+            "concert",
+            "burna-boy",
+            "arena"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1656892800000,
+          "_text": "burna boy at climate pledge arena burna boy's 'love, damini' tour stop in seattle was absolutely massive. the african giant brought his full band. first afrobeats artist to headline climate pledge arena. climate pledge arena marcus williams concert burna-boy arena",
+          "_tags": [
+            "concert",
+            "burna-boy",
+            "arena"
+          ]
+        },
+        "summary": "Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+        "voiceover": "Burna Boy at Climate Pledge Arena carries the momentum. Burna Boy's 'Love, Damini' tour stop in Seattle was absolutely massive. The African Giant brought his full band.",
+        "connection": {
+          "type": "tag",
+          "label": "#concert"
+        },
+        "intensity": 4
+      },
+      {
+        "id": "cinematic-3",
+        "anecdote": {
+          "id": "sample-1",
+          "date": "2015-06-15",
+          "year": 2015,
+          "title": "First Afrobeats Night at The Crocodile",
+          "story": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+          "storyteller": "Amara Johnson",
+          "location": "The Crocodile, Belltown",
+          "notes": "This event marked the beginning of the Seattle Afrobeats scene.",
+          "media": [],
+          "tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1434326400000,
+          "_text": "first afrobeats night at the crocodile the energy was electric. dj khaled was spinning wizkid and davido tracks, and the dance floor was packed from wall to wall. this event marked the beginning of the seattle afrobeats scene. the crocodile, belltown amara johnson milestone dj dance",
+          "_tags": [
+            "milestone",
+            "dj",
+            "dance"
+          ]
+        },
+        "summary": "The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall to wall.",
+        "voiceover": "First Afrobeats Night at The Crocodile carries the momentum. The energy was electric. DJ Khaled was spinning Wizkid and Davido tracks, and the dance floor was packed from wall...",
+        "connection": {
+          "type": "chronology",
+          "label": "2022 to 2015"
+        },
+        "intensity": 3
+      },
+      {
+        "id": "cinematic-4",
+        "anecdote": {
+          "id": "sample-5",
+          "date": "2023-11-18",
+          "year": 2023,
+          "title": "Seattle Afrobeats Festival Launch",
+          "story": "The inaugural Seattle Afrobeats Festival brought together local DJs, dancers, food vendors, and artists.",
+          "storyteller": "Amina Diallo",
+          "location": "Seattle Center",
+          "notes": "Over 5,000 attendees throughout the day.",
+          "media": [],
+          "tags": [
+            "festival",
+            "food",
+            "community"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1700265600000,
+          "_text": "seattle afrobeats festival launch the inaugural seattle afrobeats festival brought together local djs, dancers, food vendors, and artists. over 5,000 attendees throughout the day. seattle center amina diallo festival food community",
+          "_tags": [
+            "festival",
+            "food",
+            "community"
+          ]
+        },
+        "summary": "The inaugural Seattle Afrobeats Festival brought together local DJs, dancers, food vendors, and artists.",
+        "voiceover": "Seattle Afrobeats Festival Launch carries the momentum. The inaugural Seattle Afrobeats Festival brought together local DJs, dancers, food vendors, and artists.",
+        "connection": {
+          "type": "chronology",
+          "label": "2015 to 2023"
+        },
+        "intensity": 3
+      },
+      {
+        "id": "cinematic-5",
+        "anecdote": {
+          "id": "sample-3",
+          "date": "2019-03-10",
+          "year": 2019,
+          "title": "Afrobeats Dance Workshop at UW",
+          "story": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+          "storyteller": "Chioma Nwosu",
+          "location": "University of Washington",
+          "notes": "Co-hosted by the African Student Association.",
+          "media": [],
+          "tags": [
+            "dance",
+            "workshop",
+            "education"
+          ],
+          "createdAt": 1704067200000,
+          "updatedAt": 1704067200000,
+          "_timestamp": 1552176000000,
+          "_text": "afrobeats dance workshop at uw we organized a free dance workshop teaching azonto and shaku shaku moves. over 200 people showed up! co-hosted by the african student association. university of washington chioma nwosu dance workshop education",
+          "_tags": [
+            "dance",
+            "workshop",
+            "education"
+          ]
+        },
+        "summary": "We organized a free dance workshop teaching Azonto and Shaku Shaku moves. Over 200 people showed up!",
+        "voiceover": "By 2019, the whole city could feel the change.",
+        "connection": {
+          "type": "chronology",
+          "label": "2023 to 2019"
+        },
+        "intensity": 1
+      }
+    ],
+    "tags": [
+      "concert",
+      "wizkid",
+      "nigeria",
+      "burna-boy",
+      "arena",
+      "milestone",
+      "dj",
+      "dance",
+      "festival",
+      "food",
+      "community",
+      "workshop",
+      "education"
+    ],
+    "timeframe": {
+      "start": "2017-08-22",
+      "end": "2019-03-10",
+      "years": [
+        2015,
+        2017,
+        2019,
+        2022,
+        2023
+      ]
+    }
+  }
+]

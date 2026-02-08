@@ -1,6 +1,6 @@
 import { serve } from 'bun';
 import { join, basename, extname } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { Database } from 'bun:sqlite';
 
 const PORT = parseInt(process.env.PORT || '3001');
@@ -14,9 +14,11 @@ const corsHeaders = {
 
 const dataDir = join(import.meta.dir, '.');
 const uploadsDir = join(import.meta.dir, '..', 'uploads');
+const storylinesFile = join(dataDir, 'storylines.json');
 
 if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
 if (!existsSync(uploadsDir)) mkdirSync(uploadsDir, { recursive: true });
+if (!existsSync(storylinesFile)) writeFileSync(storylinesFile, JSON.stringify([], null, 2));
 
 // Initialize SQLite database
 const DB_PATH = join(dataDir, 'anecdotes.db');
@@ -160,6 +162,16 @@ const getAnecdotesByYear = (year: number) => {
   }));
 };
 
+const loadStorylines = () => {
+  try { return JSON.parse(readFileSync(storylinesFile, 'utf8')); }
+  catch { return []; }
+};
+
+const saveStorylines = (data: any) => {
+  try { writeFileSync(storylinesFile, JSON.stringify(data, null, 2)); return true; }
+  catch { return false; }
+};
+
 const createAnecdote = (data: any) => {
   const id = generateId();
   const now = Date.now();
@@ -273,6 +285,10 @@ serve({
       return new Response(JSON.stringify(getAllAnecdotes()), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
+    if (pathname === '/api/storylines' && method === 'GET') {
+      return new Response(JSON.stringify(loadStorylines()), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     if (pathname.match(/^\/api\/anecdotes\/year\/\d+$/) && method === 'GET') {
       const year = parseInt(pathname.split('/').pop()!);
       return new Response(JSON.stringify(getAnecdotesByYear(year)), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
@@ -292,6 +308,16 @@ serve({
       if (!date || !year || !title || !story || !storyteller) return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       const newAnecdote = createAnecdote({ date, year: parseInt(year), title, story, storyteller, location, notes, media, tags });
       return new Response(JSON.stringify(newAnecdote), { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
+    if (pathname === '/api/storylines' && method === 'POST') {
+      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      const body = await req.json();
+      const storylines = Array.isArray(body) ? body : body.storylines;
+      if (!Array.isArray(storylines)) return new Response(JSON.stringify({ error: 'Invalid storylines payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      const success = saveStorylines(storylines);
+      if (!success) return new Response(JSON.stringify({ error: 'Failed to save storylines' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      return new Response(JSON.stringify({ success: true, count: storylines.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
     if (pathname.match(/^\/api\/anecdotes\/[^/]+$/) && method === 'PUT' && !pathname.includes('/year/')) {

@@ -112,5 +112,79 @@
     ],
     "createdAt": 1770513003297,
     "updatedAt": 1770513003297
+  },
+  {
+    "id": "96cb2893-bd83-49ee-a52f-1ef41044d7bc",
+    "date": "2012-01-01",
+    "year": 2012,
+    "title": "Test story",
+    "story": "This is a test",
+    "storyteller": "DJ Topdog",
+    "location": "Somewhere",
+    "notes": "",
+    "media": [],
+    "tags": [],
+    "createdAt": 1770523994694,
+    "updatedAt": 1770523994694
+  },
+  {
+    "id": "561fc972-b92b-455c-8310-557cc50294ce",
+    "date": "2012-01-10",
+    "year": 2012,
+    "title": "Testwithimage",
+    "story": "This is a test as well",
+    "storyteller": "Iliass",
+    "location": "Swhobox",
+    "notes": "The image should display on the top card",
+    "media": [
+      {
+        "id": "",
+        "type": "image",
+        "url": "/uploads/1770524161919-qfvy2qd073g.png",
+        "caption": ""
+      }
+    ],
+    "tags": [
+      "Test"
+    ],
+    "createdAt": 1770524172613,
+    "updatedAt": 1770524172613
+  },
+  {
+    "id": "f922d49f-a613-4941-8479-8445852b55b9",
+    "date": "2016-01-01",
+    "year": 2016,
+    "title": "Ye: Burna Boy on the rise",
+    "story": "Everywhere you go you hear this songe Ye. Burna boy popout on the scean with banger that takes afrobeats to the world and made him top dog above davido and wizkid.",
+    "storyteller": "Iliass",
+    "location": "Red Lounge",
+    "notes": "",
+    "media": [
+      {
+        "id": "",
+        "type": "image",
+        "url": "/uploads/1770530171240-aaqrwawswtd.jpg",
+        "caption": ""
+      }
+    ],
+    "tags": [
+      "burnaboy"
+    ],
+    "createdAt": 1770531285799,
+    "updatedAt": 1770531285799
+  },
+  {
+    "id": "7563e486-36b6-4890-90e0-476296588757",
+    "date": "2020-01-01",
+    "year": 2020,
+    "title": "Pandemic hits",
+    "story": "Everything slowdown",
+    "storyteller": "DJ Topdog",
+    "location": "Space needle",
+    "notes": "",
+    "media": [],
+    "tags": [],
+    "createdAt": 1770531359505,
+    "updatedAt": 1770531359505
   }
 ]

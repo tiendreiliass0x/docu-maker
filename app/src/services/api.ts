@@ -1,4 +1,4 @@
-import type { Anecdote } from '@/types';
+import type { Anecdote, Storyline } from '@/types';
 
 // Get the base URL without /api suffix for uploads
 const getBaseUrl = () => {
@@ -154,6 +154,17 @@ export const api = {
       type: 'date' | 'storyteller' | 'tag';
     }>;
   }>('/graph'),
+
+  // Storylines
+  getStorylines: () => fetchApi<Storyline[]>('/storylines'),
+
+  // Save storylines (requires auth)
+  saveStorylines: (storylines: Storyline[]) =>
+    fetchApi<{ success: boolean; count: number }>('/storylines', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storylines }),
+    }),
 
   // Verify access key
   verifyKey: async (key: string): Promise<{ valid: boolean; error?: string }> => {

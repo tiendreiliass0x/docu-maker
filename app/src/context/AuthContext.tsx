@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '@/services/api';
 
@@ -20,6 +21,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const verifyKey = useCallback(async (key: string): Promise<boolean> => {
+    setIsVerifying(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`${api.getApiBaseUrl?.() || 'http://localhost:3001/api'}/verify-key`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.valid) {
+        setAccessKeyState(key);
+        setIsAuthenticated(true);
+        localStorage.setItem(ACCESS_KEY_STORAGE, key);
+        return true;
+      } else {
+        setError(data.error || 'Invalid access key');
+        return false;
+      }
+    } catch {
+      setError('Failed to verify key');
+      return false;
+    } finally {
+      setIsVerifying(false);
+    }
+  }, []);
+
+  const logout = useCallback(() => {
+    setAccessKeyState(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem(ACCESS_KEY_STORAGE);
+    setError(null);
+  }, []);
+
+  const setAccessKey = useCallback((key: string | null) => {
+    if (key) {
+      verifyKey(key);
+    } else {
+      logout();
+    }
+  }, [verifyKey, logout]);
 
   // Initialize from URL param or localStorage on mount
   useEffect(() => {
@@ -51,52 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     initAuth();
-  }, []);
-
-  const verifyKey = useCallback(async (key: string): Promise<boolean> => {
-    setIsVerifying(true);
-    setError(null);
-    
-    try {
-      const response = await fetch(`${api.getApiBaseUrl?.() || 'http://localhost:3001/api'}/verify-key`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.valid) {
-        setAccessKeyState(key);
-        setIsAuthenticated(true);
-        localStorage.setItem(ACCESS_KEY_STORAGE, key);
-        return true;
-      } else {
-        setError(data.error || 'Invalid access key');
-        return false;
-      }
-    } catch (err) {
-      setError('Failed to verify key');
-      return false;
-    } finally {
-      setIsVerifying(false);
-    }
-  }, []);
-
-  const setAccessKey = useCallback((key: string | null) => {
-    if (key) {
-      verifyKey(key);
-    } else {
-      logout();
-    }
   }, [verifyKey]);
-
-  const logout = useCallback(() => {
-    setAccessKeyState(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem(ACCESS_KEY_STORAGE);
-    setError(null);
-  }, []);
 
   return (
     <AuthContext.Provider

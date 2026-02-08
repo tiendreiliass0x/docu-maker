@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { api } from '@/services/api';
 import type { Anecdote } from '@/types';
@@ -33,11 +34,6 @@ export function TimelineProvider({ children }: { children: React.ReactNode }) {
   const [isEditing, setIsEditing] = useState(false);
   const [expandedAnecdote, setExpandedAnecdote] = useState<Anecdote | null>(null);
 
-  // Load anecdotes from API on mount
-  useEffect(() => {
-    refreshAnecdotes();
-  }, []);
-
   const refreshAnecdotes = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -51,6 +47,11 @@ export function TimelineProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(false);
     }
   }, []);
+
+  // Load anecdotes from API on mount
+  useEffect(() => {
+    refreshAnecdotes();
+  }, [refreshAnecdotes]);
 
   const addAnecdote = useCallback(async (anecdote: Omit<Anecdote, 'id' | 'createdAt' | 'updatedAt'>) => {
     setIsLoading(true);

@@ -41,7 +41,7 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
     });
   };
 
-  const getImageUrl = (url: string) => {
+  const getMediaUrl = (url: string) => {
     if (url.startsWith('/uploads/')) {
       return `${UPLOADS_URL}${url}`;
     }
@@ -51,6 +51,7 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
   // Filter image media
   const imageMedia = anecdote.media.filter(m => m.type === 'image');
   const otherMedia = anecdote.media.filter(m => m.type !== 'image');
+  const primaryMedia = imageMedia[0] || otherMedia[0];
 
   if (!expanded) {
     return (
@@ -58,6 +59,52 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
         className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 hover:border-[#D0FF59]/50 transition-all cursor-pointer"
         onClick={() => setExpandedAnecdote(anecdote)}
       >
+        {primaryMedia && (
+          <div className="mb-3 rounded-lg overflow-hidden border border-gray-700 bg-gray-900">
+            {primaryMedia.type === 'image' && (
+              <img
+                src={getMediaUrl(primaryMedia.url)}
+                alt={primaryMedia.caption || anecdote.title}
+                className="w-full h-32 object-cover"
+              />
+            )}
+            {primaryMedia.type === 'video' && (() => {
+              const mediaUrl = getMediaUrl(primaryMedia.url);
+              const youtubeId = getYouTubeId(mediaUrl);
+              if (youtubeId) {
+                return (
+                  <div className="aspect-video">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${youtubeId}`}
+                      title={primaryMedia.caption || 'Video preview'}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                );
+              }
+              return (
+                <video
+                  src={mediaUrl}
+                  controls
+                  preload="metadata"
+                  className="w-full h-32 object-cover"
+                />
+              );
+            })()}
+            {primaryMedia.type === 'audio' && (
+              <div className="p-3">
+                <audio
+                  src={getMediaUrl(primaryMedia.url)}
+                  controls
+                  preload="metadata"
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
+        )}
         <div className="flex items-center gap-2 text-[#D0FF59] text-xs mb-2">
           <Calendar className="w-3 h-3" />
           {formatDate(anecdote.date)}
@@ -82,7 +129,7 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
               {imageMedia.length > 0 && (
                 <div className="relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
                   <img 
-                    src={getImageUrl(imageMedia[0].url)} 
+                    src={getMediaUrl(imageMedia[0].url)} 
                     alt="" 
                     className="w-full h-full object-cover"
                   />
@@ -121,219 +168,90 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
 
   return (
     <div className="bg-gradient-to-br from-gray-900 to-black rounded-2xl border border-gray-700 overflow-hidden max-w-5xl w-full">
-      <div className="flex flex-col lg:flex-row max-h-[85vh]">
-        {/* Left side - Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
-            {isEditing ? (
-              <Input
-                value={editedAnecdote.title}
-                onChange={(e) => setEditedAnecdote({ ...editedAnecdote, title: e.target.value })}
-                className="bg-gray-800/50 border-gray-700 text-white text-xl font-semibold flex-1 mr-4"
-              />
-            ) : (
-              <h2 className="font-display text-2xl md:text-3xl text-white">
-                {anecdote.title}
-              </h2>
+      <div className="max-h-[85vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-gray-800">
+          {isEditing ? (
+            <Input
+              value={editedAnecdote.title}
+              onChange={(e) => setEditedAnecdote({ ...editedAnecdote, title: e.target.value })}
+              className="bg-gray-800/50 border-gray-700 text-white text-xl font-semibold flex-1 mr-4"
+            />
+          ) : (
+            <h2 className="font-display text-2xl md:text-3xl text-white">
+              {anecdote.title}
+            </h2>
+          )}
+          
+          <div className="flex items-center gap-2">
+            {/* Edit/Delete buttons - only visible when authenticated */}
+            {isAuthenticated && (
+              <>
+                {!isEditing ? (
+                  <>
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                      title="Edit story"
+                    >
+                      <Edit2 className="w-5 h-5 text-gray-400" />
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      className="p-2 hover:bg-red-500/20 rounded-full transition-colors"
+                      title="Delete story"
+                    >
+                      <Trash2 className="w-5 h-5 text-red-400" />
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleSave}
+                    className="p-2 hover:bg-[#D0FF59]/20 rounded-full transition-colors"
+                    title="Save changes"
+                  >
+                    <Save className="w-5 h-5 text-[#D0FF59]" />
+                  </button>
+                )}
+              </>
             )}
             
-            <div className="flex items-center gap-2">
-              {/* Edit/Delete buttons - only visible when authenticated */}
-              {isAuthenticated && (
-                <>
-                  {!isEditing ? (
-                    <>
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                        title="Edit story"
-                      >
-                        <Edit2 className="w-5 h-5 text-gray-400" />
-                      </button>
-                      <button
-                        onClick={handleDelete}
-                        className="p-2 hover:bg-red-500/20 rounded-full transition-colors"
-                        title="Delete story"
-                      >
-                        <Trash2 className="w-5 h-5 text-red-400" />
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={handleSave}
-                      className="p-2 hover:bg-[#D0FF59]/20 rounded-full transition-colors"
-                      title="Save changes"
-                    >
-                      <Save className="w-5 h-5 text-[#D0FF59]" />
-                    </button>
-                  )}
-                </>
-              )}
-              
-              {onClose && (
-                <button
-                  onClick={onClose}
-                  className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-gray-400" />
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className="space-y-6">
-            {/* Meta Info */}
-            <div className="flex flex-wrap items-center gap-4 text-sm">
-              <div className="flex items-center gap-2 text-[#D0FF59]">
-                <Calendar className="w-4 h-4" />
-                {isEditing ? (
-                  <Input
-                    type="date"
-                    value={editedAnecdote.date}
-                    onChange={(e) => setEditedAnecdote({ ...editedAnecdote, date: e.target.value })}
-                    className="bg-gray-800/50 border-gray-700 text-white w-auto"
-                  />
-                ) : (
-                  formatDate(anecdote.date)
-                )}
-              </div>
-              
-              {/* Location */}
-              <div className="flex items-center gap-2 text-gray-400">
-                <MapPin className="w-4 h-4" />
-                {isEditing ? (
-                  <Input
-                    value={editedAnecdote.location}
-                    onChange={(e) => setEditedAnecdote({ ...editedAnecdote, location: e.target.value })}
-                    className="bg-gray-800/50 border-gray-700 text-white w-auto"
-                    placeholder="Location"
-                  />
-                ) : (
-                  anecdote.location || 'Unknown location'
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 text-gray-400">
-                <User className="w-4 h-4" />
-                {isEditing ? (
-                  <Input
-                    value={editedAnecdote.storyteller}
-                    onChange={(e) => setEditedAnecdote({ ...editedAnecdote, storyteller: e.target.value })}
-                    className="bg-gray-800/50 border-gray-700 text-white w-auto"
-                  />
-                ) : (
-                  anecdote.storyteller
-                )}
-              </div>
-            </div>
-
-            {/* Story */}
-            <div>
-              <h3 className="text-gray-500 text-sm mb-2 uppercase tracking-wider">The Story</h3>
-              {isEditing ? (
-                <Textarea
-                  value={editedAnecdote.story}
-                  onChange={(e) => setEditedAnecdote({ ...editedAnecdote, story: e.target.value })}
-                  className="bg-gray-800/50 border-gray-700 text-white min-h-[150px]"
-                />
-              ) : (
-                <p className="text-white text-lg leading-relaxed whitespace-pre-wrap">
-                  {anecdote.story}
-                </p>
-              )}
-            </div>
-
-            {/* Notes */}
-            {((!isEditing && anecdote.notes) || isEditing) && (
-              <div>
-                <h3 className="text-gray-500 text-sm mb-2 uppercase tracking-wider">Notes</h3>
-                {isEditing ? (
-                  <Textarea
-                    value={editedAnecdote.notes}
-                    onChange={(e) => setEditedAnecdote({ ...editedAnecdote, notes: e.target.value })}
-                    className="bg-gray-800/50 border-gray-700 text-white"
-                    placeholder="Additional notes..."
-                  />
-                ) : (
-                  <p className="text-gray-400 italic">
-                    {anecdote.notes}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* Tags */}
-            <div>
-              <h3 className="text-gray-500 text-sm mb-2 uppercase tracking-wider">Tags</h3>
-              {isEditing ? (
-                <Input
-                  value={editedAnecdote.tags.join(', ')}
-                  onChange={(e) => setEditedAnecdote({ 
-                    ...editedAnecdote, 
-                    tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) 
-                  })}
-                  className="bg-gray-800/50 border-gray-700 text-white"
-                  placeholder="comma, separated, tags"
-                />
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {anecdote.tags.map(tag => (
-                    <span 
-                      key={tag}
-                      className="flex items-center gap-1 px-3 py-1 bg-gray-800 text-[#D0FF59] rounded-full text-sm"
-                    >
-                      <Tag className="w-3 h-3" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Other Media (Video/Audio) */}
-            {otherMedia.length > 0 && (
-              <div>
-                <h3 className="text-gray-500 text-sm mb-4 uppercase tracking-wider">Media</h3>
-                <div className="space-y-3">
-                  {otherMedia.map((media, index) => (
-                    <MediaItem key={index} media={media} />
-                  ))}
-                </div>
-              </div>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400" />
+              </button>
             )}
           </div>
         </div>
 
-        {/* Right side - Images */}
+        {/* Media Gallery at the top */}
         {imageMedia.length > 0 && (
-          <div className="lg:w-80 xl:w-96 bg-gray-950 border-t lg:border-t-0 lg:border-l border-gray-800 p-4 overflow-y-auto">
-            <h3 className="text-gray-500 text-sm mb-4 uppercase tracking-wider sticky top-0 bg-gray-950 py-2">
-              Images ({imageMedia.length})
-            </h3>
-            <div className="space-y-3">
+          <div className="p-6 pb-2 border-b border-gray-800">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {imageMedia.map((media, index) => (
                 <div key={index} className="group relative">
                   <a 
-                    href={getImageUrl(media.url)}
+                    href={getMediaUrl(media.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block"
                   >
                     <div className="aspect-video bg-gray-800 rounded-lg overflow-hidden">
                       <img 
-                        src={getImageUrl(media.url)}
+                        src={getMediaUrl(media.url)}
                         alt={media.caption || `Image ${index + 1}`}
                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
                   </a>
                   {media.caption && (
-                    <p className="text-gray-400 text-xs mt-1">{media.caption}</p>
+                    <p className="text-gray-400 text-xs mt-1 truncate">{media.caption}</p>
                   )}
                   <a 
-                    href={getImageUrl(media.url)}
+                    href={getMediaUrl(media.url)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="absolute top-2 right-2 p-2 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -345,6 +263,129 @@ export function AnecdoteCard({ anecdote, expanded = false, onClose }: AnecdoteCa
             </div>
           </div>
         )}
+
+        {/* Content */}
+        <div className="p-6 space-y-6">
+          {/* Meta Info */}
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <div className="flex items-center gap-2 text-[#D0FF59]">
+              <Calendar className="w-4 h-4" />
+              {isEditing ? (
+                <Input
+                  type="date"
+                  value={editedAnecdote.date}
+                  onChange={(e) => setEditedAnecdote({ ...editedAnecdote, date: e.target.value })}
+                  className="bg-gray-800/50 border-gray-700 text-white w-auto"
+                />
+              ) : (
+                formatDate(anecdote.date)
+              )}
+            </div>
+            
+            {/* Location */}
+            <div className="flex items-center gap-2 text-gray-400">
+              <MapPin className="w-4 h-4" />
+              {isEditing ? (
+                <Input
+                  value={editedAnecdote.location}
+                  onChange={(e) => setEditedAnecdote({ ...editedAnecdote, location: e.target.value })}
+                  className="bg-gray-800/50 border-gray-700 text-white w-auto"
+                  placeholder="Location"
+                />
+              ) : (
+                anecdote.location || 'Unknown location'
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 text-gray-400">
+              <User className="w-4 h-4" />
+              {isEditing ? (
+                <Input
+                  value={editedAnecdote.storyteller}
+                  onChange={(e) => setEditedAnecdote({ ...editedAnecdote, storyteller: e.target.value })}
+                  className="bg-gray-800/50 border-gray-700 text-white w-auto"
+                />
+              ) : (
+                anecdote.storyteller
+              )}
+            </div>
+          </div>
+
+          {/* Story */}
+          <div>
+            <h3 className="text-gray-500 text-sm mb-2 uppercase tracking-wider">The Story</h3>
+            {isEditing ? (
+              <Textarea
+                value={editedAnecdote.story}
+                onChange={(e) => setEditedAnecdote({ ...editedAnecdote, story: e.target.value })}
+                className="bg-gray-800/50 border-gray-700 text-white min-h-[150px]"
+              />
+            ) : (
+              <p className="text-white text-lg leading-relaxed whitespace-pre-wrap">
+                {anecdote.story}
+              </p>
+            )}
+          </div>
+
+          {/* Notes */}
+          {((!isEditing && anecdote.notes) || isEditing) && (
+            <div>
+              <h3 className="text-gray-500 text-sm mb-2 uppercase tracking-wider">Notes</h3>
+              {isEditing ? (
+                <Textarea
+                  value={editedAnecdote.notes}
+                  onChange={(e) => setEditedAnecdote({ ...editedAnecdote, notes: e.target.value })}
+                  className="bg-gray-800/50 border-gray-700 text-white"
+                  placeholder="Additional notes..."
+                />
+              ) : (
+                <p className="text-gray-400 italic">
+                  {anecdote.notes}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Tags */}
+          <div>
+            <h3 className="text-gray-500 text-sm mb-2 uppercase tracking-wider">Tags</h3>
+            {isEditing ? (
+              <Input
+                value={editedAnecdote.tags.join(', ')}
+                onChange={(e) => setEditedAnecdote({ 
+                  ...editedAnecdote, 
+                  tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) 
+                })}
+                className="bg-gray-800/50 border-gray-700 text-white"
+                placeholder="comma, separated, tags"
+              />
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {anecdote.tags.map(tag => (
+                  <span 
+                    key={tag}
+                    className="flex items-center gap-1 px-3 py-1 bg-gray-800 text-[#D0FF59] rounded-full text-sm"
+                  >
+                    <Tag className="w-3 h-3" />
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Other Media (Video/Audio) */}
+          {otherMedia.length > 0 && (
+            <div>
+              <h3 className="text-gray-500 text-sm mb-4 uppercase tracking-wider">Media</h3>
+              <div className="space-y-3">
+                {otherMedia.map((media, index) => (
+                  <MediaItem key={index} media={media} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -376,7 +417,8 @@ function MediaItem({ media }: { media: Media }) {
   };
 
   // Check if it's a YouTube URL
-  const youtubeId = getYouTubeId(media.url);
+  const resolvedUrl = getMediaUrl(media.url);
+  const youtubeId = getYouTubeId(resolvedUrl);
   if (youtubeId) {
     return (
       <div className="relative">
@@ -411,8 +453,9 @@ function MediaItem({ media }: { media: Media }) {
     return (
       <div className="relative">
         <video 
-          src={getMediaUrl(media.url)}
+          src={resolvedUrl}
           controls
+          preload="metadata"
           className="w-full aspect-video rounded-lg"
           onError={() => setError(true)}
         />
@@ -427,8 +470,9 @@ function MediaItem({ media }: { media: Media }) {
     return (
       <div className="bg-gray-800 rounded-lg p-4">
         <audio 
-          src={getMediaUrl(media.url)}
+          src={resolvedUrl}
           controls
+          preload="metadata"
           className="w-full"
           onError={() => setError(true)}
         />

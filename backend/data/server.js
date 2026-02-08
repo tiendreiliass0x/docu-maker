@@ -15,10 +15,12 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 // Data files
 const ANECDOTES_FILE = path.join(dataDir, 'anecdotes.json');
 const SUBSCRIBERS_FILE = path.join(dataDir, 'subscribers.json');
+const STORYLINES_FILE = path.join(dataDir, 'storylines.json');
 
 // Initialize files if they don't exist
 if (!fs.existsSync(ANECDOTES_FILE)) fs.writeFileSync(ANECDOTES_FILE, JSON.stringify([], null, 2));
 if (!fs.existsSync(SUBSCRIBERS_FILE)) fs.writeFileSync(SUBSCRIBERS_FILE, JSON.stringify([], null, 2));
+if (!fs.existsSync(STORYLINES_FILE)) fs.writeFileSync(STORYLINES_FILE, JSON.stringify([], null, 2));
 
 const generateId = () => crypto.randomUUID();
 
@@ -54,6 +56,16 @@ const loadSubscribers = () => {
 
 const saveSubscribers = (data) => {
   try { fs.writeFileSync(SUBSCRIBERS_FILE, JSON.stringify(data, null, 2)); return true; }
+  catch { return false; }
+};
+
+const loadStorylines = () => {
+  try { return JSON.parse(fs.readFileSync(STORYLINES_FILE, 'utf8')); }
+  catch { return []; }
+};
+
+const saveStorylines = (data) => {
+  try { fs.writeFileSync(STORYLINES_FILE, JSON.stringify(data, null, 2)); return true; }
   catch { return false; }
 };
 
@@ -186,6 +198,12 @@ const server = http.createServer(async (req, res) => {
       res.end(JSON.stringify(loadAnecdotes()));
       return;
     }
+
+    if (pathname === '/api/storylines' && method === 'GET') {
+      res.writeHead(200);
+      res.end(JSON.stringify(loadStorylines()));
+      return;
+    }
     
     if (pathname.match(/^\/api\/anecdotes\/year\/\d+$/) && method === 'GET') {
       const year = parseInt(pathname.split('/').pop());
@@ -240,6 +258,33 @@ const server = http.createServer(async (req, res) => {
       saveAnecdotes(anecdotes);
       res.writeHead(201);
       res.end(JSON.stringify(newAnecdote));
+      return;
+    }
+
+    if (pathname === '/api/storylines' && method === 'POST') {
+      if (!verifyAccessKey()) {
+        res.writeHead(401);
+        res.end(JSON.stringify({ error: 'Access key required' }));
+        return;
+      }
+
+      const body = await parseBody();
+      const storylines = Array.isArray(body) ? body : body.storylines;
+      if (!Array.isArray(storylines)) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Invalid storylines payload' }));
+        return;
+      }
+
+      const success = saveStorylines(storylines);
+      if (!success) {
+        res.writeHead(500);
+        res.end(JSON.stringify({ error: 'Failed to save storylines' }));
+        return;
+      }
+
+      res.writeHead(200);
+      res.end(JSON.stringify({ success: true, count: storylines.length }));
       return;
     }
     
