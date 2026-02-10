@@ -46,7 +46,6 @@ jobs:
         host: ${{ secrets.DROPLET_IP }}
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        fingerprint:  ${{secrets.SSH_FINGERPRINT}}
         source: "app/dist/,backend/data/,backend/uploads/"
         target: "/var/www/docu-maker/"
         strip_components: 0
@@ -58,7 +57,6 @@ jobs:
         host: ${{ secrets.DROPLET_IP }}
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        fingerprint:  ${{secrets.SSH_FINGERPRINT}}
         script: |
           cd /var/www/docu-maker/backend/data
           pm2 restart afrobeats-api || pm2 start server.js --name afrobeats-api
