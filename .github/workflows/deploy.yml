@@ -34,7 +34,20 @@ jobs:
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.DROPLET_IP }} >> ~/.ssh/known_hosts
-    
+
+    - name: Verify host fingerprint
+      run: |
+        ssh-keyscan -T 5 -t ed25519 "${{ secrets.DROPLET_IP }}" 2>/dev/null \
+          | awk 'NR==1 {print $2" "$3" droplet-host"}' > /tmp/droplet-host.pub
+        ACTUAL_FP=$(ssh-keygen -lf /tmp/droplet-host.pub | awk '{print $2}')
+        rm -f /tmp/droplet-host.pub
+
+        if [ "$ACTUAL_FP" != "${{ secrets.SSH_FINGERPRINT }}" ]; then
+          echo "Fingerprint mismatch. Expected: ${{ secrets.SSH_FINGERPRINT }}"
+          echo "Fingerprint mismatch. Actual:   $ACTUAL_FP"
+          exit 1
+        fi
+
     - name: Install backend dependencies
       run: |
         cd backend/data
