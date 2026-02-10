@@ -16,7 +16,17 @@ NC='\033[0m' # No Color
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Resolve project directory whether this script is at repo root
+# (./deploy.sh) or inside a nested folder (e.g., ./scripts/deploy.sh).
+if [ -d "$SCRIPT_DIR/app" ] && [ -d "$SCRIPT_DIR/backend" ]; then
+    PROJECT_DIR="$SCRIPT_DIR"
+elif [ -d "$(dirname "$SCRIPT_DIR")/app" ] && [ -d "$(dirname "$SCRIPT_DIR")/backend" ]; then
+    PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+else
+    echo -e "${RED}❌ Could not determine project directory from script location${NC}"
+    exit 1
+fi
 
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
