@@ -27,15 +27,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     
     try {
-      const response = await fetch(`${api.getApiBaseUrl?.() || 'http://localhost:3001/api'}/verify-key`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.valid) {
+      const data = await api.verifyKey(key);
+      if (data.valid) {
         setAccessKeyState(key);
         setIsAuthenticated(true);
         localStorage.setItem(ACCESS_KEY_STORAGE, key);

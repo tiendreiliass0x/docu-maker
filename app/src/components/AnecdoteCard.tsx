@@ -4,6 +4,7 @@ import { useTimeline } from '@/context/TimelineContext';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { API_BASE_URL } from '@/services/api';
 import type { Anecdote, Media } from '@/types';
 
 interface AnecdoteCardProps {
@@ -12,7 +13,6 @@ interface AnecdoteCardProps {
   onClose?: () => void;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const UPLOADS_URL = API_BASE_URL.replace('/api', '');
 const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.ogg', '.ogv', '.mov', '.m4v'];
 const AUDIO_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
@@ -443,8 +443,6 @@ const isDirectMediaFile = (url: string, extensions: string[]): boolean => {
 
 function MediaItem({ media }: { media: Media }) {
   const [error, setError] = useState(false);
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-  const UPLOADS_URL = API_BASE_URL.replace('/api', '');
 
   const getMediaUrl = (url: string) => {
     if (url.startsWith('/uploads/')) {

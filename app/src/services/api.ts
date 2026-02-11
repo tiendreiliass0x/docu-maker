@@ -2,11 +2,11 @@ import type { Anecdote, Storyline } from '@/types';
 
 // Get the base URL without /api suffix for uploads
 const getBaseUrl = () => {
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+  const apiUrl = import.meta.env.VITE_API_URL || '/api';
   return apiUrl.replace('/api', '');
 };
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 export const UPLOADS_BASE_URL = getBaseUrl();
 
 // Get stored access key

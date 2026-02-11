@@ -50,7 +50,7 @@ jobs:
 
     - name: Install backend dependencies
       run: |
-        cd backend/data
+        cd backend
         npm ci
     
     - name: Deploy to server
@@ -59,7 +59,7 @@ jobs:
         host: ${{ secrets.DROPLET_IP }}
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "app/dist/,backend/data/,backend/uploads/"
+        source: "app/dist/,backend/server.js,backend/package.json,backend/package-lock.json,backend/data/,backend/uploads/"
         target: "/var/www/docu-maker/"
         strip_components: 0
         overwrite: true
@@ -71,7 +71,7 @@ jobs:
         username: root
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd /var/www/docu-maker/backend/data
+          cd /var/www/docu-maker/backend
           pm2 restart afrobeats-api || pm2 start server.js --name afrobeats-api
           pm2 save
           echo "✅ Deployment complete!"

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { API_BASE_URL } from '@/services/api';
 
 interface SubscribeFormProps {
   className?: string;
@@ -25,7 +26,6 @@ export function SubscribeForm({ className = '' }: SubscribeFormProps) {
     setMessage('');
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
       const response = await fetch(`${API_BASE_URL}/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

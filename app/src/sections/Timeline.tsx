@@ -6,6 +6,7 @@ import { useTimeline } from '@/context/TimelineContext';
 import { useAuth } from '@/context/AuthContext';
 import { AnecdoteForm } from '@/components/AnecdoteForm';
 import { AnecdoteCard } from '@/components/AnecdoteCard';
+import { API_BASE_URL } from '@/services/api';
 import type { Anecdote } from '@/types';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -318,7 +319,6 @@ export function Timeline() {
 function DockAnecdoteCard({ anecdote }: { anecdote: Anecdote }) {
   const { setExpandedAnecdote } = useTimeline();
 
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
   const UPLOADS_URL = API_BASE_URL.replace('/api', '');
 
   const getImageUrl = (url: string) => {
