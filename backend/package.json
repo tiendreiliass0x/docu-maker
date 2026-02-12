@@ -2,10 +2,11 @@
   "name": "afrobeats-timeline-backend",
   "version": "1.0.0",
   "description": "Backend for Afrobeats in Seattle documentary timeline",
-  "main": "server.js",
+  "main": "server.ts",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
+    "start": "bun server.ts",
+    "dev": "bun --watch server.ts",
+    "migrate": "bun data/migrate.ts"
   },
   "dependencies": {}
 }

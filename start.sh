@@ -18,9 +18,9 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$SCRIPT_DIR"
 
-# Check if Node.js is installed
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed"
+# Check if Bun is installed
+if ! command -v bun &> /dev/null; then
+    echo "❌ Bun is not installed"
     exit 1
 fi
 
@@ -28,7 +28,7 @@ fi
 cleanup() {
     echo ""
     echo "Shutting down servers..."
-    pkill -f "node server.js" 2>/dev/null || true
+    pkill -f "bun server.ts" 2>/dev/null || true
     exit 0
 }
 trap cleanup INT TERM
@@ -37,12 +37,15 @@ trap cleanup INT TERM
 echo -e "${BLUE}🔧 Starting backend on port 3001...${NC}"
 cd "$PROJECT_DIR/backend"
 
-# Create data files if they don't exist
-[ ! -f "data/anecdotes.json" ] && echo "[]" > data/anecdotes.json
-[ ! -f "data/subscribers.json" ] && echo "[]" > data/subscribers.json
+# Create data files if they don't exist for migration/bootstrap
+[ ! -f "data/anecdotes.json" ] && printf "[]" > data/anecdotes.json
+[ ! -f "data/subscribers.json" ] && printf "[]" > data/subscribers.json
 mkdir -p uploads
 
-node server.js &
+# Run one-time/ongoing safe migration bootstrap
+bun run migrate >/dev/null 2>&1 || true
+
+bun server.ts &
 BACKEND_PID=$!
 echo -e "${GREEN}✓ Backend started (PID: $BACKEND_PID)${NC}"
 

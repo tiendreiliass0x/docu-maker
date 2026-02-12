@@ -87,3 +87,30 @@ export interface Storyline {
     years: number[];
   };
 }
+
+export interface StoryboardScene {
+  sceneNumber: number;
+  beatId: string;
+  slugline: string;
+  visualDirection: string;
+  camera: string;
+  audio: string;
+  voiceover: string;
+  onScreenText: string;
+  transition: string;
+  durationSeconds: number;
+}
+
+export interface StorylineGenerationResult {
+  writeup: {
+    headline: string;
+    deck: string;
+    narrative: string;
+  };
+  storyboard: StoryboardScene[];
+  extras: {
+    logline: string;
+    socialCaption: string;
+    pullQuotes: string[];
+  };
+}

@@ -5,6 +5,8 @@ const url = require('url');
 
 const PORT = parseInt(process.env.PORT || '3001');
 const ACCESS_KEY = process.env.ACCESS_KEY || 'AFRO12';
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
 
 const dataDir = path.join(__dirname, 'data');
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -67,6 +69,163 @@ const loadStorylines = () => {
 const saveStorylines = (data) => {
   try { fs.writeFileSync(STORYLINES_FILE, JSON.stringify(data, null, 2)); return true; }
   catch { return false; }
+};
+
+const parseJsonSafely = (text) => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+};
+
+const buildStorylineContext = (storyline) => {
+  return {
+    id: storyline.id,
+    title: storyline.title,
+    description: storyline.description,
+    style: storyline.style,
+    tone: storyline.tone,
+    openingLine: storyline.openingLine,
+    closingLine: storyline.closingLine,
+    timeframe: storyline.timeframe,
+    tags: Array.isArray(storyline.tags) ? storyline.tags.slice(0, 12) : [],
+    beats: Array.isArray(storyline.beats)
+      ? storyline.beats.map((beat, index) => ({
+          order: index + 1,
+          beatId: beat.id,
+          intensity: beat.intensity,
+          summary: beat.summary,
+          voiceover: beat.voiceover,
+          connection: beat.connection,
+          anecdote: {
+            id: beat.anecdote?.id,
+            date: beat.anecdote?.date,
+            year: beat.anecdote?.year,
+            title: beat.anecdote?.title,
+            story: beat.anecdote?.story,
+            storyteller: beat.anecdote?.storyteller,
+            location: beat.anecdote?.location,
+            tags: beat.anecdote?.tags || [],
+          },
+        }))
+      : [],
+  };
+};
+
+const generateStoryPackage = async (storyline, prompt) => {
+  if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is not configured');
+  }
+
+  const schema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['writeup', 'storyboard', 'extras'],
+    properties: {
+      writeup: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['headline', 'deck', 'narrative'],
+        properties: {
+          headline: { type: 'string' },
+          deck: { type: 'string' },
+          narrative: { type: 'string' },
+        },
+      },
+      storyboard: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['sceneNumber', 'beatId', 'slugline', 'visualDirection', 'camera', 'audio', 'voiceover', 'onScreenText', 'transition', 'durationSeconds'],
+          properties: {
+            sceneNumber: { type: 'number' },
+            beatId: { type: 'string' },
+            slugline: { type: 'string' },
+            visualDirection: { type: 'string' },
+            camera: { type: 'string' },
+            audio: { type: 'string' },
+            voiceover: { type: 'string' },
+            onScreenText: { type: 'string' },
+            transition: { type: 'string' },
+            durationSeconds: { type: 'number' },
+          },
+        },
+      },
+      extras: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['logline', 'socialCaption', 'pullQuotes'],
+        properties: {
+          logline: { type: 'string' },
+          socialCaption: { type: 'string' },
+          pullQuotes: { type: 'array', items: { type: 'string' } },
+        },
+      },
+    },
+  };
+
+  const basePrompt = [
+    'You are a documentary writer and storyboard artist.',
+    'Use only facts from the provided storyline context.',
+    'Do not invent names, dates, venues, or events not in the context.',
+    'If a detail is missing, write UNKNOWN.',
+    'Keep chronology aligned with beat order.',
+    'Tone must match the provided style and tone fields.',
+    'Narrative should be 3-5 concise paragraphs.',
+    'Storyboard should include one scene per beat.',
+  ].join(' ');
+
+  const payload = {
+    model: OPENAI_MODEL,
+    temperature: 0.7,
+    messages: [
+      { role: 'system', content: basePrompt },
+      {
+        role: 'user',
+        content: JSON.stringify({
+          prompt: prompt || 'Create a compelling documentary write-up and production-ready storyboard.',
+          storyline: buildStorylineContext(storyline),
+        }),
+      },
+    ],
+    response_format: {
+      type: 'json_schema',
+      json_schema: {
+        name: 'story_package',
+        strict: true,
+        schema,
+      },
+    },
+  };
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = data?.error?.message || 'LLM request failed';
+    throw new Error(message);
+  }
+
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== 'string') {
+    throw new Error('LLM response missing content');
+  }
+
+  const parsed = parseJsonSafely(content);
+  if (!parsed) {
+    throw new Error('LLM returned invalid JSON');
+  }
+
+  return parsed;
 };
 
 // Parse multipart form data
@@ -208,6 +367,34 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/storylines' && method === 'GET') {
       res.writeHead(200);
       res.end(JSON.stringify(loadStorylines()));
+      return;
+    }
+
+    if (pathname === '/api/storylines/generate' && method === 'POST') {
+      if (!verifyAccessKey()) {
+        res.writeHead(401);
+        res.end(JSON.stringify({ error: 'Access key required' }));
+        return;
+      }
+
+      const body = await parseBody();
+      const storyline = body.storyline;
+      const prompt = typeof body.prompt === 'string' ? body.prompt : '';
+
+      if (!storyline || typeof storyline !== 'object' || !Array.isArray(storyline.beats) || !storyline.beats.length) {
+        res.writeHead(400);
+        res.end(JSON.stringify({ error: 'Valid storyline payload is required' }));
+        return;
+      }
+
+      try {
+        const result = await generateStoryPackage(storyline, prompt);
+        res.writeHead(200);
+        res.end(JSON.stringify({ success: true, result }));
+      } catch (error) {
+        res.writeHead(502);
+        res.end(JSON.stringify({ error: error.message || 'Failed to generate story package' }));
+      }
       return;
     }
     

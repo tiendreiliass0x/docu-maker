@@ -1,4 +1,4 @@
-import type { Anecdote, Storyline } from '@/types';
+import type { Anecdote, Storyline, StorylineGenerationResult } from '@/types';
 
 // Get the base URL without /api suffix for uploads
 const getBaseUrl = () => {
@@ -164,6 +164,14 @@ export const api = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ storylines }),
+    }),
+
+  // Generate write-up + storyboard (requires auth)
+  generateStoryPackage: (storyline: Storyline, prompt?: string) =>
+    fetchApi<{ success: boolean; result: StorylineGenerationResult }>('/storylines/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storyline, prompt }),
     }),
 
   // Verify access key
