@@ -7,26 +7,26 @@ import { generateStorylines } from '@/lib/storylineGenerator';
 import type { Storyline, StorylineBeat, StorylineStyle } from '@/types';
 
 const STYLE_META: Record<StorylineStyle, { label: string; badge: string; glow: string; icon: ReactElement }> = {
-  '50cent': {
-    label: '50 Cent Cut',
+  nightlife: {
+    label: 'Nightlife Cut',
     badge: 'bg-amber-300 text-black',
     glow: 'from-amber-400/25 via-transparent to-transparent',
     icon: <Sparkles className="w-4 h-4" />,
   },
-  jesse: {
-    label: 'Jesse Washington Cut',
+  chronicle: {
+    label: 'Chronicle Cut',
     badge: 'bg-sky-300 text-black',
     glow: 'from-sky-400/25 via-transparent to-transparent',
     icon: <Film className="w-4 h-4" />,
   },
-  coogler: {
-    label: 'Ryan Coogler Cut',
+  cinematic: {
+    label: 'Cinematic Cut',
     badge: 'bg-rose-300 text-black',
     glow: 'from-rose-400/30 via-transparent to-transparent',
     icon: <Flame className="w-4 h-4" />,
   },
-  hybrid: {
-    label: 'Hybrid Cut',
+  breakthrough: {
+    label: 'Breakthrough Cut',
     badge: 'bg-[#D0FF59] text-black',
     glow: 'from-[#D0FF59]/30 via-transparent to-transparent',
     icon: <Clapperboard className="w-4 h-4" />,
@@ -42,7 +42,8 @@ export function Storylines() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const lastSavedSignature = useRef<string | null>(null);
-  const showDebug = import.meta.env.DEV || import.meta.env.VITE_STORYLINE_DEBUG === 'true';
+  const canViewStorylineInsights = isAuthenticated;
+  const showDebug = canViewStorylineInsights && (import.meta.env.DEV || import.meta.env.VITE_STORYLINE_DEBUG === 'true');
 
   useEffect(() => {
     let isMounted = true;
@@ -284,7 +285,7 @@ export function Storylines() {
                               <span className="flex items-center gap-1"><Tag className="w-3 h-3" />#{beat.anecdote.tags[0]}</span>
                             )}
                           </div>
-                          {showDebug && beat.debug && (
+                          {(showDebug || canViewStorylineInsights) && beat.debug && (
                             <details className="mt-2 rounded-lg border border-gray-800 bg-black/35 p-2">
                               <summary className="cursor-pointer list-none text-[11px] text-gray-400 flex items-center gap-1">
                                 <Bug className="w-3 h-3" />
@@ -310,6 +311,23 @@ export function Storylines() {
                     ))}
                   </div>
                 </div>
+
+                {(canViewStorylineInsights || showDebug) && (
+                  <details
+                    className="mt-4 border border-gray-800 rounded-xl bg-black/30 p-4 text-gray-500"
+                    style={{ fontFamily: "'Courier New', Courier, monospace" }}
+                  >
+                    <summary className="cursor-pointer text-xs tracking-wide text-gray-400">
+                      Insights: How this beat sheet and storyboard were built
+                    </summary>
+                    <p className="mt-3 text-xs leading-relaxed">
+                      We score each anecdote transition using shared tags, timeline flow, storyteller and location continuity,
+                      and impact signals. The beat sheet is then assembled from the highest-scoring chain, while avoiding
+                      overusing the same anecdotes. The storyboard view mirrors that ordered chain so each card reflects
+                      why the next moment follows from the previous one.
+                    </p>
+                  </details>
+                )}
               </div>
             </div>
           )}

@@ -43,10 +43,10 @@ const IMPACT_KEYWORDS = ['first', 'sold out', 'breakthrough', 'headline', 'festi
 const COMMUNITY_KEYWORDS = ['community', 'diaspora', 'collective', 'organizer', 'student', 'campus', 'family', 'roots', 'culture', 'heritage', 'immigrant', 'neighbors'];
 
 const STYLE_TONE: Record<StorylineStyle, string> = {
-  '50cent': 'Gritty, first-person energy with swagger',
-  jesse: 'Measured, human-centered reporting with reflective edges (Jesse Washington cut)',
-  coogler: 'Cinematic, character-driven with emotional build and hope',
-  hybrid: 'Cinematic with journalistic edge',
+  nightlife: 'Gritty, first-person energy with swagger',
+  chronicle: 'Measured, human-centered reporting with reflective edges (Chronicle cut)',
+  cinematic: 'Cinematic, character-driven with emotional build and hope',
+  breakthrough: 'Cinematic with journalistic edge',
 };
 
 const YEAR_MS = 1000 * 60 * 60 * 24 * 365;
@@ -329,19 +329,19 @@ const buildVoiceover = (style: StorylineStyle, beat: AnecdoteMeta, index: number
   const summary = truncate(beat.story, 120);
   const location = beat.location ? ` at ${beat.location}` : '';
 
-  if (style === '50cent') {
+  if (style === 'nightlife') {
     if (index === 0) return `Back in ${beat.year}${location}, it started with ${beat.title.toLowerCase()}.`;
     if (index === total - 1) return `By ${beat.year}, ${beat.title} was proof the city had changed.`;
     return `${beat.title}${location}. ${summary}`;
   }
 
-  if (style === 'jesse') {
+  if (style === 'chronicle') {
     if (index === 0) return `In ${beat.year}${location}, a quiet shift started to feel inevitable.`;
     if (index === total - 1) return `By ${beat.year}, the story is no longer about a moment but a movement.`;
     return `${beat.storyteller} remembers ${beat.title.toLowerCase()}. ${summary}`;
   }
 
-  if (style === 'coogler') {
+  if (style === 'cinematic') {
     if (index === 0) return `In ${beat.year}${location}, a spark caught—small, personal, and loud.`;
     if (index === total - 1) return `By ${beat.year}, the whole city could feel the change.`;
     return `${beat.title} carries the momentum. ${summary}`;
@@ -354,16 +354,16 @@ const buildVoiceover = (style: StorylineStyle, beat: AnecdoteMeta, index: number
 
 const buildOpeningLine = (style: StorylineStyle, first: AnecdoteMeta): string => {
   const location = first.location ? ` at ${first.location}` : '';
-  if (style === '50cent') return `This is how the city started moving in ${first.year}${location}.`;
-  if (style === 'jesse') return `A sound crossed oceans and settled into Seattle by ${first.year}.`;
-  if (style === 'coogler') return `In ${first.year}${location}, a new rhythm found its people.`;
+  if (style === 'nightlife') return `This is how the city started moving in ${first.year}${location}.`;
+  if (style === 'chronicle') return `A sound crossed oceans and settled into Seattle by ${first.year}.`;
+  if (style === 'cinematic') return `In ${first.year}${location}, a new rhythm found its people.`;
   return `In ${first.year}${location}, the timeline sparks.`;
 };
 
 const buildClosingLine = (style: StorylineStyle, last: AnecdoteMeta): string => {
-  if (style === '50cent') return `Now the rhythm is part of the city's DNA.`;
-  if (style === 'jesse') return `The movement keeps writing its next chapter.`;
-  if (style === 'coogler') return `The story lands, but the music keeps moving.`;
+  if (style === 'nightlife') return `Now the rhythm is part of the city's DNA.`;
+  if (style === 'chronicle') return `The movement keeps writing its next chapter.`;
+  if (style === 'cinematic') return `The story lands, but the music keeps moving.`;
   return `The beat keeps moving after ${last.year}.`;
 };
 
@@ -434,7 +434,7 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
       id: 'chronicle',
       title: 'Origins to Spotlight',
       description: 'A straight-line rise from the first rooms to the biggest stages.',
-      style: 'jesse',
+      style: 'chronicle',
       mode: 'chronological',
       focusTags: topTags,
       focusKeywords: [],
@@ -443,7 +443,7 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
       id: 'nightlife',
       title: 'Nightlife Pulse',
       description: 'The late-night circuit that kept the rhythm alive.',
-      style: '50cent',
+      style: 'nightlife',
       mode: 'tag',
       focusTags: Array.from(new Set([...NIGHTLIFE_TAGS, ...topTags])),
       focusKeywords: NIGHTLIFE_KEYWORDS,
@@ -452,7 +452,7 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
       id: 'breakthrough',
       title: 'Breakthrough Moments',
       description: 'When the scene broke past its borders and stayed there.',
-      style: 'hybrid',
+      style: 'breakthrough',
       mode: 'impact',
       focusTags: topTags,
       focusKeywords: IMPACT_KEYWORDS,
@@ -461,7 +461,7 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
       id: 'cinematic',
       title: 'Heat & Hope',
       description: 'A cinematic rise shaped by grit, joy, and the people who held it together.',
-      style: 'coogler',
+      style: 'cinematic',
       mode: 'impact',
       focusTags: topTags,
       focusKeywords: [...IMPACT_KEYWORDS, ...COMMUNITY_KEYWORDS],
@@ -490,7 +490,7 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
       id: 'core',
       title: 'The Core Story',
       description: 'A quick-cut run through the key memories so far.',
-      style: 'hybrid',
+      style: 'chronicle',
       mode: 'chronological',
       focusTags: topTags,
       focusKeywords: [],

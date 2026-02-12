@@ -38,7 +38,7 @@ export interface StoryLink {
   type: 'date' | 'storyteller' | 'tag';
 }
 
-export type StorylineStyle = '50cent' | 'jesse' | 'coogler' | 'hybrid';
+export type StorylineStyle = 'chronicle' | 'nightlife' | 'breakthrough' | 'cinematic';
 
 export interface StorylineConnection {
   type: 'tag' | 'storyteller' | 'location' | 'chronology';
