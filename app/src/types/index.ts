@@ -52,6 +52,23 @@ export interface StorylineBeat {
   voiceover: string;
   connection: StorylineConnection | null;
   intensity: number;
+  debug?: StorylineScoreBreakdown | null;
+}
+
+export interface StorylineScoreBreakdown {
+  total: number;
+  sharedTagScore: number;
+  storytellerScore: number;
+  locationScore: number;
+  chronologyScore: number;
+  recencyScore: number;
+  themeScore: number;
+  usagePenalty: number;
+  modePenalty: number;
+  storytellerStreak: number;
+  sharedTags: string[];
+  previousAnecdoteId: string;
+  candidateAnecdoteId: string;
 }
 
 export interface Storyline {

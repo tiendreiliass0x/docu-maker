@@ -1,9 +1,30 @@
-import type { Anecdote, Storyline, StorylineBeat, StorylineConnection, StorylineStyle } from '@/types';
+import type {
+  Anecdote,
+  Storyline,
+  StorylineBeat,
+  StorylineConnection,
+  StorylineScoreBreakdown,
+  StorylineStyle,
+} from '@/types';
 
 type AnecdoteMeta = Anecdote & {
   _timestamp: number;
   _text: string;
   _tags: string[];
+};
+
+type TagWeights = Map<string, number>;
+
+type ThemeScore = {
+  total: number;
+  tagScore: number;
+  keywordScore: number;
+  impactScore: number;
+};
+
+type ChainBuildResult = {
+  chain: AnecdoteMeta[];
+  debugByBeat: Map<string, StorylineScoreBreakdown>;
 };
 
 type StorylineRecipe = {
@@ -30,6 +51,27 @@ const STYLE_TONE: Record<StorylineStyle, string> = {
 
 const YEAR_MS = 1000 * 60 * 60 * 24 * 365;
 
+const SCORE_WEIGHTS = {
+  sharedTag: 2.4,
+  storytellerBase: 3,
+  storytellerMin: 0.8,
+  storytellerDecay: 1.35,
+  storytellerVarietyBonus: 1.2,
+  location: 1.75,
+  chronologicalForward: 2.4,
+  timeWithinYear: 1.25,
+  timeWithin3Years: 0.4,
+  usagePenalty: 1.1,
+  chronologicalBacktrackPenalty: 4.5,
+  themeTagWeight: 2.9,
+  themeKeywordWeight: 1.6,
+  impactModeMultiplier: 1.2,
+  startImpactBoost: 0.5,
+  startUsagePenalty: 1.4,
+} as const;
+
+const escapeRegex = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const buildText = (a: Anecdote) => (
   `${a.title} ${a.story} ${a.notes} ${a.location} ${a.storyteller} ${a.tags.join(' ')}`
 ).toLowerCase();
@@ -44,7 +86,17 @@ const toMeta = (anecdotes: Anecdote[]): AnecdoteMeta[] => {
 };
 
 const countMatches = (text: string, keywords: string[]): number => {
-  return keywords.reduce((count, keyword) => (text.includes(keyword) ? count + 1 : count), 0);
+  return keywords.reduce((count, keyword) => {
+    const normalized = keyword.trim().toLowerCase();
+    if (!normalized) return count;
+
+    if (normalized.includes(' ')) {
+      return count + (text.includes(normalized) ? 1 : 0);
+    }
+
+    const matches = text.match(new RegExp(`\\b${escapeRegex(normalized)}\\b`, 'g'));
+    return count + Math.min(3, matches?.length || 0);
+  }, 0);
 };
 
 const countTagMatches = (tags: string[], focus: string[]): number => {
@@ -65,44 +117,116 @@ const computeImpactScore = (a: AnecdoteMeta): number => {
   return score;
 };
 
-const computeThemeScore = (a: AnecdoteMeta, recipe: StorylineRecipe): number => {
-  let score = 0;
-  score += countTagMatches(a._tags, recipe.focusTags) * 3;
-  score += countMatches(a._text, recipe.focusKeywords) * 2;
-  if (recipe.mode === 'impact') score += computeImpactScore(a) * 1.5;
-  return score;
+const computeTagWeights = (items: AnecdoteMeta[]): TagWeights => {
+  const tagDocs = new Map<string, number>();
+  const totalDocs = Math.max(1, items.length);
+
+  items.forEach(item => {
+    const uniqueTags = new Set(item._tags);
+    uniqueTags.forEach(tag => {
+      tagDocs.set(tag, (tagDocs.get(tag) || 0) + 1);
+    });
+  });
+
+  const weights: TagWeights = new Map();
+  tagDocs.forEach((docCount, tag) => {
+    const idf = Math.log((totalDocs + 1) / (docCount + 1)) + 1;
+    weights.set(tag, Number(idf.toFixed(3)));
+  });
+
+  return weights;
+};
+
+const computeThemeScore = (a: AnecdoteMeta, recipe: StorylineRecipe, tagWeights: TagWeights): ThemeScore => {
+  let tagScore = 0;
+  const themeTagMatches = countTagMatches(a._tags, recipe.focusTags);
+  if (themeTagMatches) {
+    const weightedTags = recipe.focusTags.reduce((sum, tag) => {
+      if (!a._tags.includes(tag)) return sum;
+      return sum + (tagWeights.get(tag) || 1);
+    }, 0);
+    tagScore += weightedTags * SCORE_WEIGHTS.themeTagWeight;
+  }
+
+  const keywordScore = countMatches(a._text, recipe.focusKeywords) * SCORE_WEIGHTS.themeKeywordWeight;
+  const impactScore = recipe.mode === 'impact' ? computeImpactScore(a) * SCORE_WEIGHTS.impactModeMultiplier : 0;
+
+  return {
+    total: tagScore + keywordScore + impactScore,
+    tagScore,
+    keywordScore,
+    impactScore,
+  };
 };
 
 const scoreConnection = (
   prev: AnecdoteMeta,
   candidate: AnecdoteMeta,
   recipe: StorylineRecipe,
-  usage: Map<string, number>
-): number => {
-  let score = 0;
+  usage: Map<string, number>,
+  tagWeights: TagWeights,
+  storytellerStreak: number
+): StorylineScoreBreakdown => {
   const shared = sharedTags(prev, candidate);
-  score += shared.length * 2.5;
-  if (prev.storyteller === candidate.storyteller) score += 3.5;
-  if (prev.location && prev.location === candidate.location) score += 2;
+  const sharedTagScore = shared.length * SCORE_WEIGHTS.sharedTag;
 
-  const timeDiff = Math.abs(candidate._timestamp - prev._timestamp) / YEAR_MS;
-  if (candidate._timestamp >= prev._timestamp) score += 2;
-  if (timeDiff <= 1) score += 1.5;
-  if (timeDiff <= 3) score += 0.5;
-
-  score += computeThemeScore(candidate, recipe);
-
-  const usedCount = usage.get(candidate.id) || 0;
-  score -= usedCount * 1.25;
-
-  if (recipe.mode === 'chronological' && candidate._timestamp < prev._timestamp) {
-    score -= 4;
+  let storytellerScore = 0;
+  if (prev.storyteller === candidate.storyteller) {
+    storytellerScore += Math.max(SCORE_WEIGHTS.storytellerMin, SCORE_WEIGHTS.storytellerBase - storytellerStreak * SCORE_WEIGHTS.storytellerDecay);
+  } else if (storytellerStreak >= 2) {
+    storytellerScore += SCORE_WEIGHTS.storytellerVarietyBonus;
   }
 
-  return score;
+  const locationScore = prev.location && prev.location === candidate.location ? SCORE_WEIGHTS.location : 0;
+
+  const timeDiff = Math.abs(candidate._timestamp - prev._timestamp) / YEAR_MS;
+  const chronologyScore = candidate._timestamp >= prev._timestamp ? SCORE_WEIGHTS.chronologicalForward : 0;
+  let recencyScore = 0;
+  if (timeDiff <= 1) recencyScore += SCORE_WEIGHTS.timeWithinYear;
+  if (timeDiff <= 3) recencyScore += SCORE_WEIGHTS.timeWithin3Years;
+
+  const theme = computeThemeScore(candidate, recipe, tagWeights);
+
+  const usedCount = usage.get(candidate.id) || 0;
+  const usagePenalty = usedCount * SCORE_WEIGHTS.usagePenalty;
+
+  let modePenalty = 0;
+  if (recipe.mode === 'chronological' && candidate._timestamp < prev._timestamp) {
+    modePenalty += SCORE_WEIGHTS.chronologicalBacktrackPenalty;
+  }
+
+  const total = sharedTagScore
+    + storytellerScore
+    + locationScore
+    + chronologyScore
+    + recencyScore
+    + theme.total
+    - usagePenalty
+    - modePenalty;
+
+  return {
+    total,
+    sharedTagScore,
+    storytellerScore,
+    locationScore,
+    chronologyScore,
+    recencyScore,
+    themeScore: theme.total,
+    usagePenalty,
+    modePenalty,
+    storytellerStreak,
+    sharedTags: shared,
+    previousAnecdoteId: prev.id,
+    candidateAnecdoteId: candidate.id,
+  };
 };
 
-const pickStart = (items: AnecdoteMeta[], recipe: StorylineRecipe, usage: Map<string, number>) => {
+const pickStart = (
+  items: AnecdoteMeta[],
+  recipe: StorylineRecipe,
+  usage: Map<string, number>,
+  tagWeights: TagWeights
+) => {
   if (recipe.mode === 'chronological') {
     return items.slice().sort((a, b) => a._timestamp - b._timestamp)[0];
   }
@@ -110,8 +234,8 @@ const pickStart = (items: AnecdoteMeta[], recipe: StorylineRecipe, usage: Map<st
   let best: AnecdoteMeta | null = null;
   let bestScore = -Infinity;
   items.forEach(item => {
-    const baseScore = computeThemeScore(item, recipe) + computeImpactScore(item) * 0.5;
-    const penalty = (usage.get(item.id) || 0) * 1.5;
+    const baseScore = computeThemeScore(item, recipe, tagWeights).total + computeImpactScore(item) * SCORE_WEIGHTS.startImpactBoost;
+    const penalty = (usage.get(item.id) || 0) * SCORE_WEIGHTS.startUsagePenalty;
     const score = baseScore - penalty;
     if (score > bestScore) {
       bestScore = score;
@@ -126,29 +250,41 @@ const buildChain = (
   items: AnecdoteMeta[],
   recipe: StorylineRecipe,
   targetLength: number,
-  usage: Map<string, number>
-): AnecdoteMeta[] => {
-  if (!items.length) return [];
+  usage: Map<string, number>,
+  tagWeights: TagWeights
+): ChainBuildResult => {
+  if (!items.length) return { chain: [], debugByBeat: new Map() };
   const sorted = items.slice().sort((a, b) => a._timestamp - b._timestamp);
   const used = new Set<string>();
   const chain: AnecdoteMeta[] = [];
+  const debugByBeat = new Map<string, StorylineScoreBreakdown>();
 
-  let current = pickStart(sorted, recipe, usage);
-  if (!current) return [];
+  let current = pickStart(sorted, recipe, usage, tagWeights);
+  if (!current) return { chain: [], debugByBeat };
 
   chain.push(current);
   used.add(current.id);
 
   while (chain.length < targetLength && used.size < sorted.length) {
     let best: AnecdoteMeta | null = null;
+    let bestBreakdown: StorylineScoreBreakdown | null = null;
     let bestScore = -Infinity;
+    const storytellerStreak = (() => {
+      let streak = 0;
+      for (let i = chain.length - 1; i >= 0; i--) {
+        if (chain[i].storyteller !== current.storyteller) break;
+        streak += 1;
+      }
+      return streak;
+    })();
 
     for (const candidate of sorted) {
       if (used.has(candidate.id)) continue;
-      const score = scoreConnection(current, candidate, recipe, usage);
-      if (score > bestScore) {
-        bestScore = score;
+      const breakdown = scoreConnection(current, candidate, recipe, usage, tagWeights, storytellerStreak);
+      if (breakdown.total > bestScore) {
+        bestScore = breakdown.total;
         best = candidate;
+        bestBreakdown = breakdown;
       }
     }
 
@@ -161,10 +297,11 @@ const buildChain = (
 
     chain.push(best);
     used.add(best.id);
+    if (bestBreakdown) debugByBeat.set(best.id, bestBreakdown);
     current = best;
   }
 
-  return chain;
+  return { chain, debugByBeat };
 };
 
 const truncate = (text: string, max: number) => {
@@ -232,7 +369,8 @@ const buildClosingLine = (style: StorylineStyle, last: AnecdoteMeta): string => 
 
 const buildStoryline = (
   recipe: StorylineRecipe,
-  chain: AnecdoteMeta[]
+  chain: AnecdoteMeta[],
+  debugByBeat: Map<string, StorylineScoreBreakdown>
 ): Storyline => {
   const beats: StorylineBeat[] = chain.map((beat, index) => {
     const prev = index > 0 ? chain[index - 1] : null;
@@ -245,6 +383,7 @@ const buildStoryline = (
       voiceover: buildVoiceover(recipe.style, beat, index, chain.length),
       connection: prev ? buildConnection(prev, beat) : null,
       intensity,
+      debug: prev ? debugByBeat.get(beat.id) || null : null,
     };
   });
 
@@ -288,6 +427,7 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
 
   const items = toMeta(anecdotes);
   const topTags = getTopTags(items, 6);
+  const tagWeights = computeTagWeights(items);
 
   const recipes: StorylineRecipe[] = [
     {
@@ -318,15 +458,6 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
       focusKeywords: IMPACT_KEYWORDS,
     },
     {
-      id: 'community',
-      title: 'Community Roots',
-      description: 'The people, spaces, and diaspora that nurtured the sound.',
-      style: 'jesse',
-      mode: 'community',
-      focusTags: topTags,
-      focusKeywords: COMMUNITY_KEYWORDS,
-    },
-    {
       id: 'cinematic',
       title: 'Heat & Hope',
       description: 'A cinematic rise shaped by grit, joy, and the people who held it together.',
@@ -343,12 +474,12 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
   const signatures = new Set<string>();
 
   recipes.forEach(recipe => {
-    const chain = buildChain(items, recipe, targetLength, usage);
+    const { chain, debugByBeat } = buildChain(items, recipe, targetLength, usage, tagWeights);
     if (chain.length < 3) return;
     const signature = chain.map(item => item.id).join('-');
     if (signatures.has(signature)) return;
 
-    const storyline = buildStoryline(recipe, chain);
+    const storyline = buildStoryline(recipe, chain, debugByBeat);
     storylines.push(storyline);
     signatures.add(signature);
     chain.forEach(item => usage.set(item.id, (usage.get(item.id) || 0) + 1));
@@ -364,8 +495,8 @@ export const generateStorylines = (anecdotes: Anecdote[]): Storyline[] => {
       focusTags: topTags,
       focusKeywords: [],
     };
-    const chain = buildChain(items, fallbackRecipe, Math.min(6, items.length), usage);
-    if (chain.length) storylines.push(buildStoryline(fallbackRecipe, chain));
+    const { chain, debugByBeat } = buildChain(items, fallbackRecipe, Math.min(6, items.length), usage, tagWeights);
+    if (chain.length) storylines.push(buildStoryline(fallbackRecipe, chain, debugByBeat));
   }
 
   return storylines;

@@ -199,6 +199,12 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (pathname === '/api/health' && method === 'GET') {
+      res.writeHead(200);
+      res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }));
+      return;
+    }
+
     if (pathname === '/api/storylines' && method === 'GET') {
       res.writeHead(200);
       res.end(JSON.stringify(loadStorylines()));

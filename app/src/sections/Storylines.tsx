@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
-import { Clapperboard, Sparkles, Film, ArrowRight, Tag, User, MapPin, Clock, Flame } from 'lucide-react';
+import { Clapperboard, Sparkles, Film, ArrowRight, Tag, User, MapPin, Clock, Flame, Bug } from 'lucide-react';
 import { useTimeline } from '@/context/TimelineContext';
 import { useAuth } from '@/context/AuthContext';
 import { api } from '@/services/api';
@@ -42,6 +42,7 @@ export function Storylines() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const lastSavedSignature = useRef<string | null>(null);
+  const showDebug = import.meta.env.DEV || import.meta.env.VITE_STORYLINE_DEBUG === 'true';
 
   useEffect(() => {
     let isMounted = true;
@@ -77,11 +78,33 @@ export function Storylines() {
   }, [storylines, selectedId]);
 
   const selected = storylines.find(line => line.id === selectedId) || storylines[0];
+  const orderedStorylines = useMemo(() => {
+    if (!storylines.length || !selectedId) return storylines;
+    const selectedLine = storylines.find(line => line.id === selectedId);
+    if (!selectedLine) return storylines;
+    return [selectedLine, ...storylines.filter(line => line.id !== selectedId)];
+  }, [storylines, selectedId]);
 
   useEffect(() => {
     if (!isAuthenticated || !generatedStorylines.length) return;
     const signature = generatedStorylines
-      .map(line => `${line.id}:${line.beats.map(beat => beat.anecdote.id).join(',')}`)
+      .map(line => [
+        line.id,
+        line.title,
+        line.openingLine,
+        line.closingLine,
+        line.beats
+          .map(beat => [
+            beat.id,
+            beat.anecdote.id,
+            beat.summary,
+            beat.voiceover,
+            beat.intensity,
+            beat.connection?.type || '',
+            beat.connection?.label || '',
+          ].join('~'))
+          .join(','),
+      ].join(':'))
       .join('|');
     if (signature === lastSavedSignature.current) return;
     lastSavedSignature.current = signature;
@@ -124,14 +147,18 @@ export function Storylines() {
       ) : (
         <div className="max-w-6xl mx-auto grid lg:grid-cols-[360px_1fr] gap-8">
           <div className="space-y-4">
-            {storylines.map((line) => (
-              <button
+            {orderedStorylines.map((line, index) => {
+              const isSelected = selected?.id === line.id;
+              const staggerOffset = isSelected ? 0 : Math.min(22, (index + 1) * 6);
+              return (
+                <button
                 key={line.id}
                 onClick={() => setSelectedId(line.id)}
-                className={`relative w-full text-left p-5 rounded-2xl border transition-all group overflow-hidden ${
-                  selected?.id === line.id
+                style={{ transform: `translateX(${staggerOffset}px)`, zIndex: orderedStorylines.length - index }}
+                className={`relative w-full text-left p-5 rounded-2xl border transition-all duration-300 group overflow-hidden ${
+                  isSelected
                     ? 'border-[#D0FF59]/70 bg-gray-900 shadow-[0_0_30px_rgba(208,255,89,0.15)]'
-                    : 'border-gray-800 bg-gray-900/40 hover:border-gray-700'
+                    : 'border-gray-800 bg-gray-900/40 hover:border-gray-700 hover:translate-x-1'
                 }`}
               >
                 <div className={`absolute inset-0 bg-gradient-to-r ${STYLE_META[line.style].glow}`} />
@@ -154,8 +181,9 @@ export function Storylines() {
                     <span>{line.tags.length} themes</span>
                   </div>
                 </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
 
           {selected && (
@@ -256,6 +284,27 @@ export function Storylines() {
                               <span className="flex items-center gap-1"><Tag className="w-3 h-3" />#{beat.anecdote.tags[0]}</span>
                             )}
                           </div>
+                          {showDebug && beat.debug && (
+                            <details className="mt-2 rounded-lg border border-gray-800 bg-black/35 p-2">
+                              <summary className="cursor-pointer list-none text-[11px] text-gray-400 flex items-center gap-1">
+                                <Bug className="w-3 h-3" />
+                                Score breakdown ({beat.debug.total.toFixed(2)})
+                              </summary>
+                              <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-[10px] text-gray-500">
+                                <span>shared tags</span><span className="text-right">+{beat.debug.sharedTagScore.toFixed(2)}</span>
+                                <span>storyteller</span><span className="text-right">+{beat.debug.storytellerScore.toFixed(2)}</span>
+                                <span>location</span><span className="text-right">+{beat.debug.locationScore.toFixed(2)}</span>
+                                <span>chronology</span><span className="text-right">+{beat.debug.chronologyScore.toFixed(2)}</span>
+                                <span>recency</span><span className="text-right">+{beat.debug.recencyScore.toFixed(2)}</span>
+                                <span>theme</span><span className="text-right">+{beat.debug.themeScore.toFixed(2)}</span>
+                                <span>usage penalty</span><span className="text-right">-{beat.debug.usagePenalty.toFixed(2)}</span>
+                                <span>mode penalty</span><span className="text-right">-{beat.debug.modePenalty.toFixed(2)}</span>
+                              </div>
+                              {beat.debug.sharedTags.length > 0 && (
+                                <p className="text-[10px] text-gray-600 mt-1">tags: {beat.debug.sharedTags.map(tag => `#${tag}`).join(' ')}</p>
+                              )}
+                            </details>
+                          )}
                         </div>
                       </div>
                     ))}
