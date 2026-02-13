@@ -1,13 +1,23 @@
 import { serve } from 'bun';
-import { join, basename, extname } from 'path';
+import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import { Database } from 'bun:sqlite';
+import { createAnecdotesDb } from './db/anecdotes';
+import { createProjectsDb } from './db/projects';
+import { createStorylinesDb } from './db/storylines';
+import { createSubscribersDb } from './db/subscribers';
+import { generateProjectStoryboardWithLlm, generateStoryboardFrameWithLlm, generateStoryPackageWithLlm, polishNotesIntoBeatsWithLlm, refineSynopsisWithLlm, regenerateStoryboardSceneWithLlm } from './lib/storylineLlm';
+import { handleAnecdotesRoutes } from './routes/anecdotes';
+import { handleProjectsRoutes } from './routes/projects';
+import { handleStorylinesRoutes } from './routes/storylines';
+import { handleSubscribersRoutes } from './routes/subscribers';
+import { handleUploadsRoutes } from './routes/uploads';
 
 const PORT = parseInt(process.env.PORT || '3001');
 const ACCESS_KEY = process.env.ACCESS_KEY || 'AFRO12';
 const ADMIN_ACCESS_KEY = process.env.ADMIN_ACCESS_KEY || '';
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-5-mini';
+const OPENAI_IMAGE_MODEL = process.env.OPENAI_IMAGE_MODEL || 'gpt-4.1-mini';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -85,15 +95,90 @@ db.exec(`
   )
 `);
 
-const generateId = (): string => crypto.randomUUID();
+db.exec(`
+  CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    pseudoSynopsis TEXT NOT NULL,
+    polishedSynopsis TEXT DEFAULT '',
+    style TEXT DEFAULT 'cinematic',
+    durationMinutes INTEGER DEFAULT 10,
+    status TEXT DEFAULT 'draft',
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+  )
+`);
 
-const getContentType = (ext: string): string => {
-  const types: Record<string, string> = {
-    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
-    '.gif': 'image/gif', '.webp': 'image/webp',
-  };
-  return types[ext] || 'application/octet-stream';
+db.exec(`
+  CREATE TABLE IF NOT EXISTS story_notes (
+    id TEXT PRIMARY KEY,
+    projectId TEXT NOT NULL,
+    source TEXT DEFAULT 'typed',
+    rawText TEXT NOT NULL,
+    transcript TEXT DEFAULT '',
+    minuteMark REAL,
+    orderIndex INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS story_beats (
+    id TEXT PRIMARY KEY,
+    projectId TEXT NOT NULL,
+    sourceNoteId TEXT,
+    orderIndex INTEGER NOT NULL,
+    minuteStart REAL NOT NULL,
+    minuteEnd REAL NOT NULL,
+    pseudoBeat TEXT NOT NULL,
+    polishedBeat TEXT NOT NULL,
+    objective TEXT DEFAULT '',
+    conflict TEXT DEFAULT '',
+    turnText TEXT DEFAULT '',
+    intensity INTEGER DEFAULT 50,
+    tags TEXT DEFAULT '[]',
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS project_packages (
+    id TEXT PRIMARY KEY,
+    projectId TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    prompt TEXT DEFAULT '',
+    status TEXT DEFAULT 'draft',
+    version INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS project_style_bibles (
+    projectId TEXT PRIMARY KEY,
+    payload TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
+const ensureTableColumn = (tableName: string, columnName: string, columnSql: string) => {
+  const columns = db.query(`PRAGMA table_info(${tableName})`).all() as Array<{ name: string }>;
+  if (!columns.find(column => column.name === columnName)) {
+    db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnSql}`);
+  }
 };
+
+ensureTableColumn('story_beats', 'locked', 'INTEGER DEFAULT 0');
+
+const generateId = (): string => crypto.randomUUID();
 
 const verifyAccessKey = (req: Request): boolean => {
   const key = req.headers.get('x-access-key') || new URL(req.url).searchParams.get('key');
@@ -106,164 +191,46 @@ const verifyAdminKey = (req: Request): boolean => {
   return key === ADMIN_ACCESS_KEY;
 };
 
-const parseMultipart = async (req: Request): Promise<{ fields: Record<string, string>; files: { name: string; data: Uint8Array; filename: string; type: string }[] }> => {
-  const contentType = req.headers.get('content-type') || '';
-  if (!contentType.includes('multipart/form-data')) return { fields: {}, files: [] };
-
-  const boundary = contentType.split('boundary=')[1];
-  if (!boundary) return { fields: {}, files: [] };
-
-  const body = await req.arrayBuffer();
-  const decoder = new TextDecoder();
-  const data = new Uint8Array(body);
-  const fields: Record<string, string> = {};
-  const files: { name: string; data: Uint8Array; filename: string; type: string }[] = [];
-  const boundaryBytes = new TextEncoder().encode(`--${boundary}`);
-  let start = 0;
-
-  const findBoundary = (data: Uint8Array, boundary: Uint8Array, start: number): number => {
-    for (let i = start; i <= data.length - boundary.length; i++) {
-      let match = true;
-      for (let j = 0; j < boundary.length; j++) {
-        if (data[i + j] !== boundary[j]) { match = false; break; }
-      }
-      if (match) return i;
-    }
-    return -1;
-  };
-
-  while (true) {
-    const boundaryIndex = findBoundary(data, boundaryBytes, start);
-    if (boundaryIndex === -1) break;
-    const nextBoundaryIndex = findBoundary(data, boundaryBytes, boundaryIndex + boundaryBytes.length);
-    if (nextBoundaryIndex === -1) break;
-
-    const part = data.slice(boundaryIndex + boundaryBytes.length, nextBoundaryIndex);
-    const partStr = decoder.decode(part);
-    const headerEnd = partStr.indexOf('\r\n\r\n');
-    if (headerEnd === -1) { start = nextBoundaryIndex; continue; }
-
-    const headers = partStr.slice(0, headerEnd);
-    const contentStart = headerEnd + 4;
-    const content = part.slice(contentStart, part.length - 2);
-
-    const nameMatch = headers.match(/name="([^"]+)"/);
-    const filenameMatch = headers.match(/filename="([^"]+)"/);
-    const typeMatch = headers.match(/Content-Type:\s*([^\r\n]+)/);
-
-    if (filenameMatch && nameMatch) {
-      files.push({ name: nameMatch[1], filename: filenameMatch[1], data: content, type: typeMatch?.[1] || 'application/octet-stream' });
-    } else if (nameMatch) {
-      fields[nameMatch[1]] = decoder.decode(content);
-    }
-    start = nextBoundaryIndex;
-  }
-  return { fields, files };
-};
-
 // Database helpers
-const getAllAnecdotes = () => {
-  const anecdotes = db.query('SELECT * FROM anecdotes ORDER BY year DESC, date DESC').all() as any[];
-  return anecdotes.map(a => ({
-    ...a,
-    tags: JSON.parse(a.tags || '[]'),
-    media: db.query('SELECT * FROM media WHERE anecdoteId = ?').all(a.id) as any[]
-  }));
-};
+const {
+  getAllAnecdotes,
+  getAnecdoteById,
+  getAnecdotesByYear,
+  createAnecdote,
+  updateAnecdote,
+  deleteAnecdote,
+} = createAnecdotesDb({ db, uploadsDir, generateId });
 
-const getAnecdoteById = (id: string) => {
-  const a = db.query('SELECT * FROM anecdotes WHERE id = ?').get(id) as any;
-  if (!a) return null;
-  return {
-    ...a,
-    tags: JSON.parse(a.tags || '[]'),
-    media: db.query('SELECT * FROM media WHERE anecdoteId = ?').all(id) as any[]
-  };
-};
+const {
+  loadStorylines,
+  saveStorylines,
+  listStorylinePackages,
+  getLatestStorylinePackage,
+  saveStorylinePackage,
+} = createStorylinesDb({ db, generateId });
 
-const getAnecdotesByYear = (year: number) => {
-  const anecdotes = db.query('SELECT * FROM anecdotes WHERE year = ? ORDER BY date DESC').all(year) as any[];
-  return anecdotes.map(a => ({
-    ...a,
-    tags: JSON.parse(a.tags || '[]'),
-    media: db.query('SELECT * FROM media WHERE anecdoteId = ?').all(a.id) as any[]
-  }));
-};
+const {
+  addSubscriber,
+  listSubscribers,
+  exportSubscribersCsv,
+} = createSubscribersDb({ db, generateId });
 
-const loadStorylines = () => {
-  const row = db.query('SELECT payload FROM storylines_cache WHERE id = 1').get() as { payload?: string } | null;
-  if (!row?.payload) return [];
-  try { return JSON.parse(row.payload); }
-  catch { return []; }
-};
-
-const saveStorylines = (data: any) => {
-  try {
-    db.query(`
-      INSERT INTO storylines_cache (id, payload, updatedAt)
-      VALUES (1, ?, ?)
-      ON CONFLICT(id) DO UPDATE SET payload = excluded.payload, updatedAt = excluded.updatedAt
-    `).run(JSON.stringify(data), Date.now());
-    return true;
-  }
-  catch { return false; }
-};
-
-const listStorylinePackages = (storylineId: string) => {
-  const rows = db.query(`
-    SELECT id, storylineId, payload, prompt, status, version, createdAt, updatedAt
-    FROM storyline_packages
-    WHERE storylineId = ?
-    ORDER BY version DESC
-  `).all(storylineId) as any[];
-
-  return rows.map(row => ({
-    id: row.id,
-    storylineId: row.storylineId,
-    prompt: row.prompt || '',
-    status: row.status || 'draft',
-    version: row.version,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    payload: JSON.parse(row.payload),
-  }));
-};
-
-const getLatestStorylinePackage = (storylineId: string) => {
-  const row = db.query(`
-    SELECT id, storylineId, payload, prompt, status, version, createdAt, updatedAt
-    FROM storyline_packages
-    WHERE storylineId = ?
-    ORDER BY version DESC
-    LIMIT 1
-  `).get(storylineId) as any;
-
-  if (!row) return null;
-  return {
-    id: row.id,
-    storylineId: row.storylineId,
-    prompt: row.prompt || '',
-    status: row.status || 'draft',
-    version: row.version,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    payload: JSON.parse(row.payload),
-  };
-};
-
-const saveStorylinePackage = (storylineId: string, payload: any, prompt: string, status: string = 'draft') => {
-  const now = Date.now();
-  const latest = db.query('SELECT version FROM storyline_packages WHERE storylineId = ? ORDER BY version DESC LIMIT 1').get(storylineId) as { version?: number } | null;
-  const version = (latest?.version || 0) + 1;
-  const id = generateId();
-
-  db.query(`
-    INSERT INTO storyline_packages (id, storylineId, payload, prompt, status, version, createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, storylineId, JSON.stringify(payload), prompt || '', status || 'draft', version, now, now);
-
-  return { id, storylineId, payload, prompt: prompt || '', status: status || 'draft', version, createdAt: now, updatedAt: now };
-};
+const {
+  listProjects,
+  getProjectById,
+  createProject,
+  updateProjectSynopsis,
+  addStoryNote,
+  listStoryNotes,
+  replaceProjectBeats,
+  listStoryBeats,
+  setBeatLocked,
+  saveProjectPackage,
+  getLatestProjectPackage,
+  setStoryboardSceneLocked,
+  getProjectStyleBible,
+  updateProjectStyleBible,
+} = createProjectsDb({ db, generateId });
 
 const buildStorylineContext = (storyline: any) => ({
   id: storyline.id,
@@ -298,95 +265,25 @@ const buildStorylineContext = (storyline: any) => ({
 });
 
 const generateStoryPackage = async (storyline: any, prompt: string) => {
-  if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not configured');
+  return generateStoryPackageWithLlm(buildStorylineContext(storyline), prompt);
+};
 
-  const schema = {
-    type: 'object',
-    additionalProperties: false,
-    required: ['writeup', 'storyboard', 'extras'],
-    properties: {
-      writeup: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['headline', 'deck', 'narrative'],
-        properties: {
-          headline: { type: 'string' },
-          deck: { type: 'string' },
-          narrative: { type: 'string' },
-        },
-      },
-      storyboard: {
-        type: 'array',
-        items: {
-          type: 'object',
-          additionalProperties: false,
-          required: ['sceneNumber', 'beatId', 'slugline', 'visualDirection', 'camera', 'audio', 'voiceover', 'onScreenText', 'transition', 'durationSeconds'],
-          properties: {
-            sceneNumber: { type: 'number' },
-            beatId: { type: 'string' },
-            slugline: { type: 'string' },
-            visualDirection: { type: 'string' },
-            camera: { type: 'string' },
-            audio: { type: 'string' },
-            voiceover: { type: 'string' },
-            onScreenText: { type: 'string' },
-            transition: { type: 'string' },
-            durationSeconds: { type: 'number' },
-          },
-        },
-      },
-      extras: {
-        type: 'object',
-        additionalProperties: false,
-        required: ['logline', 'socialCaption', 'pullQuotes'],
-        properties: {
-          logline: { type: 'string' },
-          socialCaption: { type: 'string' },
-          pullQuotes: { type: 'array', items: { type: 'string' } },
-        },
-      },
-    },
+const generateStoryboardScene = async (storyline: any, scene: any, prompt: string) => {
+  const regenerated = await regenerateStoryboardSceneWithLlm(buildStorylineContext(storyline), scene, prompt);
+
+  return {
+    ...regenerated,
+    sceneNumber: Number(regenerated?.sceneNumber || scene.sceneNumber),
+    beatId: String(regenerated?.beatId || scene.beatId),
+    slugline: String(regenerated?.slugline || scene.slugline || ''),
+    visualDirection: String(regenerated?.visualDirection || scene.visualDirection || ''),
+    camera: String(regenerated?.camera || scene.camera || ''),
+    audio: String(regenerated?.audio || scene.audio || ''),
+    voiceover: String(regenerated?.voiceover || scene.voiceover || ''),
+    onScreenText: String(regenerated?.onScreenText || scene.onScreenText || ''),
+    transition: String(regenerated?.transition || scene.transition || ''),
+    durationSeconds: Number(regenerated?.durationSeconds || scene.durationSeconds || 6),
   };
-
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      temperature: 0.7,
-      messages: [
-        {
-          role: 'system',
-          content: 'You are a documentary writer and storyboard artist. Use only facts from context. Do not invent missing facts; use UNKNOWN. Keep chronology aligned with beat order. Return strict JSON only.',
-        },
-        {
-          role: 'user',
-          content: JSON.stringify({
-            prompt: prompt || 'Create a compelling documentary write-up and production-ready storyboard.',
-            storyline: buildStorylineContext(storyline),
-          }),
-        },
-      ],
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'story_package',
-          strict: true,
-          schema,
-        },
-      },
-    }),
-  });
-
-  const data = await response.json().catch(() => null as any);
-  if (!response.ok) throw new Error(data?.error?.message || 'LLM request failed');
-  const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== 'string') throw new Error('LLM response missing content');
-  try { return JSON.parse(content); }
-  catch { throw new Error('LLM returned invalid JSON'); }
 };
 
 const validateStorylinesPayload = (storylines: any): string[] => {
@@ -465,88 +362,14 @@ const validateStorylinesPayload = (storylines: any): string[] => {
   return errors;
 };
 
-const createAnecdote = (data: any) => {
-  const id = generateId();
-  const now = Date.now();
-  db.query(`
-    INSERT INTO anecdotes (id, date, year, title, story, storyteller, location, notes, tags, createdAt, updatedAt)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, data.date, data.year, data.title, data.story, data.storyteller, data.location || '', data.notes || '', JSON.stringify(data.tags || []), now, now);
-  
-  // Insert media
-  if (data.media && data.media.length > 0) {
-    for (const m of data.media) {
-      db.query('INSERT INTO media (id, anecdoteId, type, url, caption, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(generateId(), id, m.type, m.url, m.caption || '', now);
-    }
-  }
-  
-  return getAnecdoteById(id);
-};
-
-const updateAnecdote = (id: string, data: any) => {
-  const existing = getAnecdoteById(id);
-  if (!existing) return null;
-  
-  const now = Date.now();
-  db.query(`
-    UPDATE anecdotes SET
-      date = COALESCE(?, date),
-      year = COALESCE(?, year),
-      title = COALESCE(?, title),
-      story = COALESCE(?, story),
-      storyteller = COALESCE(?, storyteller),
-      location = COALESCE(?, location),
-      notes = COALESCE(?, notes),
-      tags = COALESCE(?, tags),
-      updatedAt = ?
-    WHERE id = ?
-  `).run(
-    data.date,
-    data.year,
-    data.title,
-    data.story,
-    data.storyteller,
-    data.location,
-    data.notes,
-    data.tags ? JSON.stringify(data.tags) : null,
-    now,
-    id
-  );
-  
-  // Update media if provided
-  if (data.media) {
-    db.query('DELETE FROM media WHERE anecdoteId = ?').run(id);
-    for (const m of data.media) {
-      db.query('INSERT INTO media (id, anecdoteId, type, url, caption, createdAt) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(generateId(), id, m.type, m.url, m.caption || '', now);
-    }
-  }
-  
-  return getAnecdoteById(id);
-};
-
-const deleteAnecdote = (id: string) => {
-  // Get media to delete files
-  const media = db.query('SELECT url FROM media WHERE anecdoteId = ?').all(id) as any[];
-  for (const m of media) {
-    if (m.url && m.url.startsWith('/uploads/')) {
-      const fp = join(uploadsDir, basename(m.url));
-      if (existsSync(fp)) {
-        const file = Bun.file(fp);
-        file.delete?.();
-      }
-    }
-  }
-  
-  db.query('DELETE FROM anecdotes WHERE id = ?').run(id);
-  return true;
-};
-
 const getDbStats = () => {
   const anecdotes = (db.query('SELECT COUNT(*) as count FROM anecdotes').get() as { count: number }).count;
   const media = (db.query('SELECT COUNT(*) as count FROM media').get() as { count: number }).count;
   const subscribers = (db.query('SELECT COUNT(*) as count FROM subscribers').get() as { count: number }).count;
+  const projects = (db.query('SELECT COUNT(*) as count FROM projects').get() as { count: number }).count;
+  const storyNotes = (db.query('SELECT COUNT(*) as count FROM story_notes').get() as { count: number }).count;
+  const storyBeats = (db.query('SELECT COUNT(*) as count FROM story_beats').get() as { count: number }).count;
+  const projectPackages = (db.query('SELECT COUNT(*) as count FROM project_packages').get() as { count: number }).count;
   const storylinePackages = (db.query('SELECT COUNT(*) as count FROM storyline_packages').get() as { count: number }).count;
   const storylineRow = db.query('SELECT payload, updatedAt FROM storylines_cache WHERE id = 1').get() as { payload?: string; updatedAt?: number } | null;
 
@@ -564,6 +387,10 @@ const getDbStats = () => {
     anecdotes,
     media,
     subscribers,
+    projects,
+    storyNotes,
+    storyBeats,
+    projectPackages,
     storylines,
     storylinePackages,
     storylinesUpdatedAt: storylineRow?.updatedAt || null,
@@ -579,31 +406,15 @@ serve({
 
     if (method === 'OPTIONS') return new Response(null, { headers: corsHeaders, status: 204 });
 
-    if (pathname.startsWith('/uploads/')) {
-      const filename = basename(pathname);
-      const filePath = join(uploadsDir, filename);
-      if (existsSync(filePath)) {
-        const ext = extname(filename).toLowerCase();
-        const file = Bun.file(filePath);
-        return new Response(file, { headers: { ...corsHeaders, 'Content-Type': getContentType(ext) } });
-      }
-      return new Response(JSON.stringify({ error: 'File not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/upload' && method === 'POST') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const { files } = await parseMultipart(req);
-      const imageFile = files.find(f => ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(extname(f.filename).toLowerCase()));
-      if (!imageFile) return new Response(JSON.stringify({ error: 'No valid image uploaded' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const uniqueName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}${extname(imageFile.filename)}`;
-      const filePath = join(uploadsDir, uniqueName);
-      await Bun.write(filePath, imageFile.data);
-      return new Response(JSON.stringify({ success: true, url: `/uploads/${uniqueName}`, filename: uniqueName }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/anecdotes' && method === 'GET') {
-      return new Response(JSON.stringify(getAllAnecdotes()), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const uploadsResponse = await handleUploadsRoutes({
+      req,
+      pathname,
+      method,
+      uploadsDir,
+      corsHeaders,
+      verifyAccessKey,
+    });
+    if (uploadsResponse) return uploadsResponse;
 
     if (pathname === '/api/health' && method === 'GET') {
       return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
@@ -616,147 +427,67 @@ serve({
       return new Response(JSON.stringify(getDbStats()), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    if (pathname === '/api/storylines' && method === 'GET') {
-      return new Response(JSON.stringify(loadStorylines()), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const projectsResponse = await handleProjectsRoutes({
+      req,
+      pathname,
+      method,
+      corsHeaders,
+      verifyAccessKey,
+      listProjects,
+      getProjectById,
+      createProject,
+      updateProjectSynopsis,
+      addStoryNote,
+      listStoryNotes,
+      replaceProjectBeats,
+      listStoryBeats,
+      setBeatLocked,
+      saveProjectPackage,
+      getLatestProjectPackage,
+      setStoryboardSceneLocked,
+      getProjectStyleBible,
+      updateProjectStyleBible,
+      refineSynopsisWithLlm,
+      polishNotesIntoBeatsWithLlm,
+      generateProjectStoryboardWithLlm,
+      generateStoryboardFrameWithLlm,
+      uploadsDir,
+      generateId,
+    });
+    if (projectsResponse) return projectsResponse;
 
-    if (pathname === '/api/storylines/generate' && method === 'POST') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const body = await req.json();
-      const storyline = body.storyline;
-      const prompt = typeof body.prompt === 'string' ? body.prompt : '';
-      if (!storyline || typeof storyline !== 'object' || !Array.isArray(storyline.beats) || !storyline.beats.length) {
-        return new Response(JSON.stringify({ error: 'Valid storyline payload is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
+    const storylinesResponse = await handleStorylinesRoutes({
+      req,
+      pathname,
+      method,
+      url,
+      corsHeaders,
+      verifyAccessKey,
+      loadStorylines,
+      saveStorylines,
+      validateStorylinesPayload,
+      generateStoryPackage,
+      generateStoryboardScene,
+      listStorylinePackages,
+      getLatestStorylinePackage,
+      saveStorylinePackage,
+    });
+    if (storylinesResponse) return storylinesResponse;
 
-      try {
-        const result = await generateStoryPackage(storyline, prompt);
-        const storylineId = String(storyline.id || 'unknown-storyline');
-        const saved = saveStorylinePackage(storylineId, result, prompt, 'draft');
-        return new Response(JSON.stringify({ success: true, result, package: saved }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Failed to generate story package';
-        return new Response(JSON.stringify({ error: message }), { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-    }
-
-    if (pathname === '/api/storylines/packages' && method === 'GET') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const storylineId = url.searchParams.get('storylineId');
-      if (!storylineId) return new Response(JSON.stringify({ error: 'storylineId is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      return new Response(JSON.stringify({ items: listStorylinePackages(storylineId) }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/storylines/package' && method === 'GET') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const storylineId = url.searchParams.get('storylineId');
-      if (!storylineId) return new Response(JSON.stringify({ error: 'storylineId is required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const item = getLatestStorylinePackage(storylineId);
-      return new Response(JSON.stringify({ item }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/storylines/package' && method === 'POST') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const body = await req.json();
-      const storylineId = String(body.storylineId || '');
-      const payload = body.payload;
-      const prompt = typeof body.prompt === 'string' ? body.prompt : '';
-      const status = typeof body.status === 'string' ? body.status : 'draft';
-
-      if (!storylineId || !payload || typeof payload !== 'object') {
-        return new Response(JSON.stringify({ error: 'storylineId and payload are required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      try {
-        const item = saveStorylinePackage(storylineId, payload, prompt, status);
-        return new Response(JSON.stringify({ success: true, item }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      } catch {
-        return new Response(JSON.stringify({ error: 'Failed to save storyline package' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-    }
-
-    if (pathname.match(/^\/api\/anecdotes\/year\/\d+$/) && method === 'GET') {
-      const year = parseInt(pathname.split('/').pop()!);
-      return new Response(JSON.stringify(getAnecdotesByYear(year)), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname.match(/^\/api\/anecdotes\/[^/]+$/) && method === 'GET' && !pathname.includes('/year/')) {
-      const id = pathname.split('/').pop()!;
-      const anecdote = getAnecdoteById(id);
-      if (!anecdote) return new Response(JSON.stringify({ error: 'Anecdote not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      return new Response(JSON.stringify(anecdote), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/anecdotes' && method === 'POST') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const body = await req.json();
-      const { date, year, title, story, storyteller, location, notes, media, tags } = body;
-      if (!date || !year || !title || !story || !storyteller) return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const newAnecdote = createAnecdote({ date, year: parseInt(year), title, story, storyteller, location, notes, media, tags });
-      return new Response(JSON.stringify(newAnecdote), { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/storylines' && method === 'POST') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const body = await req.json();
-      const storylines = Array.isArray(body) ? body : body.storylines;
-      if (!Array.isArray(storylines)) return new Response(JSON.stringify({ error: 'Invalid storylines payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const validationErrors = validateStorylinesPayload(storylines);
-      if (validationErrors.length) {
-        return new Response(JSON.stringify({ error: 'Malformed storyline data', details: validationErrors }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      const success = saveStorylines(storylines);
-      if (!success) return new Response(JSON.stringify({ error: 'Failed to save storylines' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      return new Response(JSON.stringify({ success: true, count: storylines.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname.match(/^\/api\/anecdotes\/[^/]+$/) && method === 'PUT' && !pathname.includes('/year/')) {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const id = pathname.split('/').pop()!;
-      const body = await req.json();
-      const updated = updateAnecdote(id, body);
-      if (!updated) return new Response(JSON.stringify({ error: 'Anecdote not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      return new Response(JSON.stringify(updated), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname.match(/^\/api\/anecdotes\/[^/]+$/) && method === 'DELETE' && !pathname.includes('/year/')) {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const id = pathname.split('/').pop()!;
-      const existing = getAnecdoteById(id);
-      if (!existing) return new Response(JSON.stringify({ error: 'Anecdote not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      deleteAnecdote(id);
-      return new Response(JSON.stringify({ success: true, message: 'Anecdote deleted' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/graph' && method === 'GET') {
-      const anecdotes = getAllAnecdotes();
-      const nodes: any[] = [];
-      const links: any[] = [];
-      const years = [...new Set(anecdotes.map((a: any) => a.year))].sort((a, b) => a - b);
-      years.forEach(year => nodes.push({ id: `year-${year}`, type: 'year', label: year.toString(), year }));
-      const storytellers = [...new Set(anecdotes.map((a: any) => a.storyteller))];
-      storytellers.forEach(s => {
-        const id = `storyteller-${s.replace(/\s+/g, '-')}`;
-        nodes.push({ id, type: 'storyteller', label: s, storyteller: s });
-        [...new Set(anecdotes.filter((a: any) => a.storyteller === s).map((a: any) => a.year))].forEach(year => {
-          links.push({ source: id, target: `year-${year}`, type: 'storyteller-year' });
-        });
-      });
-      anecdotes.forEach((story: any) => {
-        const id = `story-${story.id}`;
-        nodes.push({ id, type: 'story', label: story.title, storyId: story.id, year: story.year, storyteller: story.storyteller, anecdote: story });
-        links.push({ source: id, target: `year-${story.year}`, type: 'story-year' });
-        links.push({ source: id, target: `storyteller-${story.storyteller.replace(/\s+/g, '-')}`, type: 'story-storyteller' });
-        if (story.tags && story.tags.length > 0) {
-          story.tags.forEach((tag: string) => {
-            const tagId = `tag-${tag}`;
-            if (!nodes.find(n => n.id === tagId)) nodes.push({ id: tagId, type: 'tag', label: tag });
-            links.push({ source: id, target: tagId, type: 'story-tag' });
-          });
-        }
-      });
-      return new Response(JSON.stringify({ nodes, links }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
+    const anecdotesResponse = await handleAnecdotesRoutes({
+      req,
+      pathname,
+      method,
+      corsHeaders,
+      verifyAccessKey,
+      getAllAnecdotes,
+      getAnecdoteById,
+      getAnecdotesByYear,
+      createAnecdote,
+      updateAnecdote,
+      deleteAnecdote,
+    });
+    if (anecdotesResponse) return anecdotesResponse;
 
     if (pathname === '/api/verify-key' && method === 'POST') {
       const body = await req.json();
@@ -766,39 +497,17 @@ serve({
       return new Response(JSON.stringify({ valid: false, error: 'Invalid key' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // Subscriber endpoints
-    if (pathname === '/api/subscribe' && method === 'POST') {
-      const body = await req.json();
-      const { email, name } = body;
-      
-      if (!email || !email.includes('@')) {
-        return new Response(JSON.stringify({ error: 'Valid email required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      
-      try {
-        db.query('INSERT INTO subscribers (id, email, name, subscribedAt) VALUES (?, ?, ?, ?)')
-          .run(generateId(), email.toLowerCase().trim(), name || '', Date.now());
-        return new Response(JSON.stringify({ success: true, message: 'Subscribed successfully' }), { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      } catch (err: any) {
-        if (err.message?.includes('UNIQUE constraint failed')) {
-          return new Response(JSON.stringify({ error: 'Email already subscribed' }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
-        return new Response(JSON.stringify({ error: 'Failed to subscribe' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-    }
-
-    if (pathname === '/api/subscribers' && method === 'GET') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const subscribers = db.query('SELECT email, name, subscribedAt FROM subscribers ORDER BY subscribedAt DESC').all();
-      return new Response(JSON.stringify(subscribers), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-
-    if (pathname === '/api/subscribers/export' && method === 'GET') {
-      if (!verifyAccessKey(req)) return new Response(JSON.stringify({ error: 'Access key required' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const subscribers = db.query('SELECT email, name, subscribedAt FROM subscribers ORDER BY subscribedAt DESC').all() as any[];
-      const csv = ['Email,Name,Subscribed At', ...subscribers.map(s => `${s.email},"${s.name || ''}",${new Date(s.subscribedAt).toISOString()}`)].join('\n');
-      return new Response(csv, { headers: { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="subscribers.csv"' } });
-    }
+    const subscribersResponse = await handleSubscribersRoutes({
+      req,
+      pathname,
+      method,
+      corsHeaders,
+      verifyAccessKey,
+      addSubscriber,
+      listSubscribers,
+      exportSubscribersCsv,
+    });
+    if (subscribersResponse) return subscribersResponse;
 
     return new Response(JSON.stringify({ error: 'Not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   },
@@ -807,4 +516,6 @@ serve({
 console.log(`Server running on port ${PORT}`);
 console.log(`Access key: ${ACCESS_KEY}`);
 console.log(`Admin key configured: ${ADMIN_ACCESS_KEY ? 'yes' : 'no'}`);
+console.log(`LLM model: ${OPENAI_MODEL}`);
+console.log(`Image model: ${OPENAI_IMAGE_MODEL}`);
 console.log(`Database: ${DB_PATH}`);

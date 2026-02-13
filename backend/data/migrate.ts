@@ -69,6 +69,81 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS projects (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    pseudoSynopsis TEXT NOT NULL,
+    polishedSynopsis TEXT DEFAULT '',
+    style TEXT DEFAULT 'cinematic',
+    durationMinutes INTEGER DEFAULT 10,
+    status TEXT DEFAULT 'draft',
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS story_notes (
+    id TEXT PRIMARY KEY,
+    projectId TEXT NOT NULL,
+    source TEXT DEFAULT 'typed',
+    rawText TEXT NOT NULL,
+    transcript TEXT DEFAULT '',
+    minuteMark REAL,
+    orderIndex INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS story_beats (
+    id TEXT PRIMARY KEY,
+    projectId TEXT NOT NULL,
+    sourceNoteId TEXT,
+    orderIndex INTEGER NOT NULL,
+    minuteStart REAL NOT NULL,
+    minuteEnd REAL NOT NULL,
+    pseudoBeat TEXT NOT NULL,
+    polishedBeat TEXT NOT NULL,
+    objective TEXT DEFAULT '',
+    conflict TEXT DEFAULT '',
+    turnText TEXT DEFAULT '',
+    intensity INTEGER DEFAULT 50,
+    tags TEXT DEFAULT '[]',
+    locked INTEGER DEFAULT 0,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS project_packages (
+    id TEXT PRIMARY KEY,
+    projectId TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    prompt TEXT DEFAULT '',
+    status TEXT DEFAULT 'draft',
+    version INTEGER NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS project_style_bibles (
+    projectId TEXT PRIMARY KEY,
+    payload TEXT NOT NULL,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    FOREIGN KEY (projectId) REFERENCES projects(id) ON DELETE CASCADE
+  )
+`);
+
 const anecdoteCount = db.query('SELECT COUNT(*) as count FROM anecdotes').get() as { count: number };
 const subscriberCount = db.query('SELECT COUNT(*) as count FROM subscribers').get() as { count: number };
 

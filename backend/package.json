@@ -6,7 +6,10 @@
   "scripts": {
     "start": "bun server.ts",
     "dev": "bun --watch server.ts",
-    "migrate": "bun data/migrate.ts"
+    "migrate": "bun data/migrate.ts",
+    "test": "bun test"
   },
-  "dependencies": {}
+  "dependencies": {
+    "openai": "^5.20.1"
+  }
 }
